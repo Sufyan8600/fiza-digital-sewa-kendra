@@ -4306,24 +4306,20 @@ function updateUdhariBadge(){
 function renderUdhari(){
   const search=(document.getElementById('udhari-search')?.value||'').toLowerCase();
   const filter=document.getElementById('udhari-filter')?.value||'all';
-  let data=[...DB.udhari].sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
-  if(search) data=data.filter(u=>u.name.toLowerCase().includes(search)||(u.mobile||'').includes(search));
-  if(filter==='due') data=data.filter(u=>getTotalDue(u)>0);
-  if(filter==='clear') data=data.filter(u=>getTotalDue(u)===0);
+  const today=getTodayStr();
 
   const totalDue=DB.udhari.reduce((s,u)=>s+getTotalDue(u),0);
   const dueCount=DB.udhari.filter(u=>getTotalDue(u)>0).length;
-  const today=getTodayStr();
   const overdue=DB.udhari.filter(u=>getTotalDue(u)>0&&u.dueDate&&u.dueDate<today).length;
   const totalOrig=DB.udhari.reduce((s,u)=>s+(u.amount||0),0);
-  const totalPaid=totalOrig-totalDue;
+  const totalPaidAll=totalOrig-totalDue;
 
   document.getElementById('udhari-stats').innerHTML=`
     <div class="stat-card red">
       <div class="stat-icon-wrap red"><i data-lucide="alert-circle"></i></div>
       <div class="stat-label">Total Due</div>
-      <div class="stat-value">Rs ${totalDue.toLocaleString('en-IN')}</div>
-      <div class="stat-sub">${dueCount} customers with outstanding dues</div>
+      <div class="stat-value">₹${totalDue.toLocaleString('en-IN')}</div>
+      <div class="stat-sub">${dueCount} customers outstanding</div>
     </div>
     <div class="stat-card amber">
       <div class="stat-icon-wrap amber"><i data-lucide="clock"></i></div>
@@ -4334,83 +4330,179 @@ function renderUdhari(){
     <div class="stat-card green">
       <div class="stat-icon-wrap green"><i data-lucide="check-circle-2"></i></div>
       <div class="stat-label">Received</div>
-      <div class="stat-value">Rs ${totalPaid.toLocaleString('en-IN')}</div>
+      <div class="stat-value">₹${totalPaidAll.toLocaleString('en-IN')}</div>
       <div class="stat-sub">Wapas aa gaya</div>
     </div>
     <div class="stat-card blue">
       <div class="stat-icon-wrap blue"><i data-lucide="users"></i></div>
       <div class="stat-label">Total Entries</div>
       <div class="stat-value">${DB.udhari.length}</div>
-      <div class="stat-sub">Sab customers</div>
+      <div class="stat-sub">Sab entries</div>
     </div>
   `;
   setTimeout(()=>{if(window.lucide)safeCreateIcons();},50);
 
-  if(data.length===0){
+  if(DB.udhari.length===0){
     document.getElementById('udhari-list').innerHTML=`<div class="empty-state"><p>No due entries found.</p></div>`;
     return;
   }
 
-  document.getElementById('udhari-list').innerHTML=data.map(u=>{
-    const due       = getTotalDue(u);
-    const totalPaid = getTotalPaidAll(u);
-    const isOverdue = u.dueDate && u.dueDate < today && due > 0;
-    const borderCol = due===0 ? 'var(--success)' : isOverdue ? 'var(--danger)' : 'var(--warning)';
-    const statusText= due===0 ? 'Cleared' : isOverdue ? 'Overdue' : 'Outstanding';
-    const statusBg  = due===0 ? 'var(--success-light)' : isOverdue ? 'var(--danger-light)' : 'var(--warning-light)';
-    const statusTxt = due===0 ? 'var(--success)' : isOverdue ? 'var(--danger)' : 'var(--warning)';
-    const payHistory=(u.payments||[]).map(p=>`
-      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9">
-        <span style="color:var(--text-muted)">${formatDateDisplay(p.date)} ${p.notes?'— '+p.notes:''}</span>
-        <span style="color:var(--success);font-weight:600">+₹${p.amount.toLocaleString('en-IN')}</span>
-      </div>`).join('');
+  // ── Group by customer (naam + mobile) ──
+  const custMap={};
+  DB.udhari.forEach(u=>{
+    const mob=(u.mobile||'').replace(/\D/g,'').slice(-10);
+    const key=(u.name.trim().toLowerCase())+'|'+(mob||u.name.trim().toLowerCase());
+    if(!custMap[key]){
+      custMap[key]={
+        key, name:u.name, mobile:u.mobile||'',
+        entries:[], totalCharge:0, totalPaid:0, totalDue:0,
+        latestDate:u.createdAt||'', hasOverdue:false
+      };
+    }
+    const due=getTotalDue(u);
+    const paid=getTotalPaidAll(u);
+    custMap[key].entries.push(u);
+    custMap[key].totalCharge+=(u.amount||0);
+    custMap[key].totalPaid+=paid;
+    custMap[key].totalDue+=due;
+    if(u.dueDate&&u.dueDate<today&&due>0) custMap[key].hasOverdue=true;
+    if((u.createdAt||'')>(custMap[key].latestDate||'')) custMap[key].latestDate=u.createdAt;
+  });
+
+  // Filter + search on grouped customers
+  let customers=Object.values(custMap);
+  if(search) customers=customers.filter(c=>
+    c.name.toLowerCase().includes(search)||(c.mobile||'').includes(search));
+  if(filter==='due') customers=customers.filter(c=>c.totalDue>0);
+  if(filter==='clear') customers=customers.filter(c=>c.totalDue===0);
+
+  // Sort: overdue first, then by latest date
+  customers.sort((a,b)=>{
+    if(a.hasOverdue&&!b.hasOverdue) return -1;
+    if(!a.hasOverdue&&b.hasOverdue) return 1;
+    return (b.latestDate||'').localeCompare(a.latestDate||'');
+  });
+
+  if(customers.length===0){
+    document.getElementById('udhari-list').innerHTML=`<div class="empty-state"><p>No entries found.</p></div>`;
+    return;
+  }
+
+  document.getElementById('udhari-list').innerHTML=customers.map(cust=>{
+    const borderCol=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
+    const statusText=cust.totalDue===0?'Cleared':cust.hasOverdue?'Overdue':'Outstanding';
+    const statusBg=cust.totalDue===0?'var(--success-light)':cust.hasOverdue?'var(--danger-light)':'var(--warning-light)';
+    const statusTxt=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
+
+    // Sort entries newest first
+    const sortedEntries=[...cust.entries].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+
+    // Build services list
+    const serviceRows=sortedEntries.map(u=>{
+      const due=getTotalDue(u);
+      const paid=getTotalPaidAll(u);
+      const isOvr=u.dueDate&&u.dueDate<today&&due>0;
+      const sColor=due===0?'var(--success)':isOvr?'var(--danger)':'var(--warning)';
+      const sBg=due===0?'var(--success-light)':isOvr?'var(--danger-light)':'var(--warning-light)';
+      const sLabel=due===0?'✓ Cleared':isOvr?'⚠ Overdue':'● Due';
+
+      // Payment history for this entry
+      const payHist=(u.payments||[]).map(p=>`
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;color:var(--text-muted)">
+          <span>${formatDateDisplay(p.date)}${p.notes?' — '+p.notes:''}</span>
+          <span style="color:var(--success);font-weight:600">+₹${p.amount.toLocaleString('en-IN')}</span>
+        </div>`).join('');
+
+      return `
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:8px;border-left:3px solid ${sColor}">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+          <div>
+            <span style="font-size:13px;font-weight:700;color:var(--text)">${esc(u.service||'General Service')}</span>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:8px">${formatDateDisplay((u.createdAt||'').split('T')[0])}</span>
+            ${u.dueDate?`<span style="font-size:11px;color:${isOvr?'var(--danger)':'var(--text-muted)'};margin-left:6px">· Due: ${formatDateDisplay(u.dueDate)}</span>`:''}
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${sBg};color:${sColor}">${sLabel}</span>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${payHist?'8px':'0'}">
+          <div style="font-size:12px;color:var(--text-muted)">Charge: <strong style="color:var(--text)">₹${(u.amount||0).toLocaleString('en-IN')}</strong></div>
+          <div style="font-size:12px;color:var(--text-muted)">Paid: <strong style="color:var(--success)">₹${paid.toLocaleString('en-IN')}</strong></div>
+          <div style="font-size:12px;color:var(--text-muted)">Baki: <strong style="color:${due>0?'var(--danger)':'var(--success)'}">₹${due.toLocaleString('en-IN')}</strong></div>
+        </div>
+        ${payHist?`<div style="border-top:1px solid var(--border);padding-top:6px">${payHist}</div>`:''}
+        ${u.notes?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic">📝 ${esc(u.notes)}</div>`:''}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
+          ${due>0?`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${u.id}')" style="font-size:11px;padding:4px 8px">✓ Mark Payment</button>`:''}
+          <button class="btn btn-outline btn-sm" onclick="editUdhari('${u.id}')" style="font-size:11px;padding:4px 8px">✏ Edit</button>
+          <button class="btn btn-sm" onclick="deleteUdhari('${u.id}')" style="font-size:11px;padding:4px 8px;background:var(--danger-light);color:var(--danger)">🗑</button>
+          ${due>0?`<button class="btn btn-sm" onclick="generateUdhariImage('${u.id}')" style="font-size:11px;padding:4px 8px;background:#6366f1;color:#fff">🖼 Image</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
 
     return `
-    <div class="card" style="margin-bottom:12px;border-left:4px solid ${borderCol}">
+    <div class="card" style="margin-bottom:14px;border-left:4px solid ${borderCol}">
       <div class="card-body" style="padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:10px;flex:1">
-            <div style="width:40px;height:40px;border-radius:50%;background:${due===0?'var(--success-light)':'var(--danger-light)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${due===0?'var(--success)':'var(--danger)'};flex-shrink:0">${u.name.charAt(0).toUpperCase()}</div>
+
+        <!-- Customer Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:44px;height:44px;border-radius:50%;background:${cust.totalDue===0?'var(--success-light)':'var(--danger-light)'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:${cust.totalDue===0?'var(--success)':'var(--danger)'};flex-shrink:0">${cust.name.charAt(0).toUpperCase()}</div>
             <div>
-              <div style="font-weight:700;font-size:15px">${esc(u.name)}</div>
-              <div style="font-size:12px;color:var(--text-muted)">${u.mobile||'No mobile number'}${u.service?' · '+u.service:''}</div>
-              ${u.dueDate?`<div style="font-size:11px;color:${isOverdue?'var(--danger)':'var(--text-muted)'}">Deadline: ${formatDateDisplay(u.dueDate)}</div>`:''}
+              <div style="font-weight:800;font-size:16px">${esc(cust.name)}</div>
+              <div style="font-size:12px;color:var(--text-muted)">${cust.mobile?'📱 '+cust.mobile:'No mobile'} · ${cust.entries.length} service${cust.entries.length>1?'s':''}</div>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:${statusBg};color:${statusTxt}">${statusText}</span>
+          <span style="font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;background:${statusBg};color:${statusTxt}">${statusText}</span>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;background:var(--bg);border-radius:var(--radius);overflow:hidden;margin-bottom:${payHistory||u.notes?'12px':'10px'}">
-          <div style="padding:10px 14px;text-align:center">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:3px">Total Charge</div>
-            <div style="font-size:16px;font-weight:700;color:var(--text)">₹${(u.amount||0).toLocaleString('en-IN')}</div>
+        <!-- Total Summary Bar -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px">
+          <div style="padding:10px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Kul Charge</div>
+            <div style="font-size:16px;font-weight:700">₹${cust.totalCharge.toLocaleString('en-IN')}</div>
           </div>
-          <div style="padding:10px 14px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:3px">Amount Paid</div>
-            <div style="font-size:16px;font-weight:700;color:var(--success)">₹${totalPaid.toLocaleString('en-IN')}</div>
+          <div style="padding:10px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Jama</div>
+            <div style="font-size:16px;font-weight:700;color:var(--success)">₹${cust.totalPaid.toLocaleString('en-IN')}</div>
           </div>
-          <div style="padding:10px 14px;text-align:center">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:3px">Balance Due</div>
-            <div style="font-size:18px;font-weight:800;color:${due>0?'var(--danger)':'var(--success)'}">₹${due.toLocaleString('en-IN')}</div>
+          <div style="padding:10px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Total Baki</div>
+            <div style="font-size:18px;font-weight:800;color:${cust.totalDue>0?'var(--danger)':'var(--success)'}">₹${cust.totalDue.toLocaleString('en-IN')}</div>
           </div>
         </div>
 
-        ${payHistory?`<div style="border-top:1px solid #f1f5f9;padding:8px 0 10px">${payHistory}</div>`:''}
-        ${u.notes?`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-style:italic">${esc(u.notes)}</div>`:''}
+        <!-- Services History -->
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">📋 Service History</div>
+        ${serviceRows}
 
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${due>0?`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${u.id}')" style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark Payment</button>`:''}
-          ${due>0&&u.mobile?`<div style="display:flex;gap:4px;flex-wrap:wrap">
-            <button class="btn btn-whatsapp btn-sm" onclick="sendUdhariWA('${u.id}')" style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> WA</button>
-            <button class="btn btn-sm" onclick="sendUdhariSMS('${u.id}')" style="display:flex;align-items:center;gap:4px;background:#6b7280;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/></svg> SMS</button>
-            <button class="btn btn-sm" onclick="generateUdhariImage('${u.id}')" style="display:flex;align-items:center;gap:4px;background:#6366f1;color:#fff" title="Due reminder image banao aur download karo"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Image</button>
-          </div>`:''}
-          <button class="btn btn-outline btn-sm" onclick="editUdhari('${u.id}')" style="display:flex;align-items:center;gap:4px"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
-          <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);padding:5px 8px;display:flex;align-items:center;gap:4px" onclick="deleteUdhari('${u.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Delete</button>
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <button class="btn btn-primary btn-sm" onclick="openAddUdhariForCustomer('${esc(cust.name)}','${cust.mobile}')" style="display:flex;align-items:center;gap:4px;font-size:12px">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Naya Kaam Add Karo
+          </button>
+          ${cust.mobile?`
+          <button class="btn btn-whatsapp btn-sm" onclick="sendUdhariWA('${sortedEntries[0].id}')" style="font-size:12px">📱 WhatsApp</button>
+          <button class="btn btn-sm" onclick="sendUdhariSMS('${sortedEntries[0].id}')" style="font-size:12px;background:#6b7280;color:#fff">💬 SMS</button>
+          `:''}
         </div>
+
       </div>
     </div>`;
   }).join('');
+}
+
+// ── Naya kaam add karo usi customer ke liye ──
+function openAddUdhariForCustomer(name, mobile){
+  openAddUdhariModal();
+  setTimeout(()=>{
+    const nameEl=document.getElementById('um-name');
+    const mobEl=document.getElementById('um-mobile');
+    if(nameEl) nameEl.value=name;
+    if(mobEl) mobEl.value=mobile||'';
+    // Name field read-only nahi — edit kar sakte hain agar zaroorat ho
+    document.getElementById('udhari-modal-title').textContent='Add Service — '+name;
+  },100);
 }
 
 function handleUdhariServiceChange(){
