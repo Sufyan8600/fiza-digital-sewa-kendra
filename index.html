@@ -53,6 +53,32 @@ body{font-family:'Poppins','Noto Sans Devanagari',sans-serif;background:var(--bg
 .login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),#3b82f6);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(26,86,219,.4);margin-top:8px;transition:transform .1s,box-shadow .2s}
 .login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(26,86,219,.5)}
 .login-error{color:var(--danger);font-size:12px;margin-top:8px;display:none}
+.login-pass-wrap{position:relative}
+.login-pass-wrap input{padding-right:46px!important}
+.pass-eye-btn{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;display:flex;align-items:center;transition:color .2s;z-index:2}
+.pass-eye-btn:hover{color:#1a56db}
+.forgot-link{text-align:right;margin-top:-10px;margin-bottom:18px}
+.forgot-link span{font-size:12px;color:#1a56db;cursor:pointer;font-weight:500}
+.forgot-link span:hover{text-decoration:underline}
+.reset-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.reset-overlay.open{display:flex}
+.reset-box{background:#fff;border-radius:18px;padding:32px 28px;width:370px;max-width:94vw;box-shadow:0 25px 60px rgba(0,0,0,.45);animation:slideUp .25s ease;position:relative}
+.reset-box h3{font-size:17px;font-weight:700;margin-bottom:6px;color:#0f172a}
+.reset-box .sub{font-size:13px;color:#64748b;margin-bottom:22px;line-height:1.5}
+.reset-step{margin-bottom:16px}
+.reset-step label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin-bottom:7px}
+.reset-step .pw{position:relative}
+.reset-step .pw input{width:100%;padding:11px 44px 11px 14px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;color:#0f172a}
+.reset-step .pw input:focus{border-color:#1a56db;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+.reset-step .pw .pass-eye-btn{right:12px}
+.reset-err{color:#dc2626;font-size:12px;margin-top:6px;display:none;font-weight:500}
+.reset-ok{background:#dcfce7;border:1px solid #86efac;border-radius:9px;padding:12px 15px;font-size:13px;color:#15803d;display:none;margin-bottom:14px;font-weight:500}
+.reset-btns{display:flex;gap:10px;margin-top:20px}
+.reset-btns button{flex:1;padding:11px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.reset-cancel-btn{background:#f1f5f9;color:#475569}
+.reset-cancel-btn:hover{background:#e2e8f0}
+.reset-save-btn{background:linear-gradient(135deg,#1a56db,#3b82f6);color:#fff;box-shadow:0 3px 10px rgba(26,86,219,.35)}
+.reset-save-btn:hover{transform:translateY(-1px)}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* LAYOUT */
@@ -620,12 +646,69 @@ body.dark-mode [style*="color:#999"]{color:#64748b !important}
     </div>
     <div class="login-field">
       <label>Password</label>
-      <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter') doLogin()">
+      <div class="login-pass-wrap">
+        <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter') doLogin()">
+        <button type="button" class="pass-eye-btn" onclick="togglePassVisibility('login-pass',this)" title="Show/Hide Password">
+          <svg id="eye-icon-login" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="forgot-link">
+      <span onclick="openResetModal()">🔑 Password bhool gaye?</span>
     </div>
     <p class="login-error" id="login-error">Incorrect username or password!</p>
     <button class="login-btn" onclick="doLogin()" style="display:flex;align-items:center;justify-content:center;gap:8px">
       <i data-lucide="log-in" style="width:18px;height:18px;stroke:#fff"></i> Sign In
     </button>
+    <div style="text-align:center;margin-top:14px">
+      <span style="font-size:11px;color:#94a3b8;display:inline-flex;align-items:center;gap:5px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Session 12 ghante ke baad expire hogi
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD RESET MODAL -->
+<div class="reset-overlay" id="reset-overlay">
+  <div class="reset-box">
+    <button onclick="closeResetModal()" style="position:absolute;top:14px;right:14px;background:#f1f5f9;border:none;border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b">✕</button>
+    <h3>🔑 Password Reset</h3>
+    <p class="sub">Pehle apna purana password confirm karo, phir naya set karo.</p>
+    <div class="reset-ok" id="reset-ok">✅ Password successfully change ho gaya! Ab naye password se login karein.</div>
+    <div class="reset-step">
+      <label>Purana Password (Current)</label>
+      <div class="pw">
+        <input type="password" id="reset-old" placeholder="Current password dalein">
+        <button type="button" class="pass-eye-btn" onclick="togglePassVisibility('reset-old',this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="reset-err" id="reset-err-old">❌ Purana password galat hai!</div>
+    </div>
+    <div class="reset-step">
+      <label>Naya Password</label>
+      <div class="pw">
+        <input type="password" id="reset-new" placeholder="Naya password dalein (min 4 char)">
+        <button type="button" class="pass-eye-btn" onclick="togglePassVisibility('reset-new',this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="reset-step">
+      <label>Naya Password Confirm Karein</label>
+      <div class="pw">
+        <input type="password" id="reset-confirm" placeholder="Dobara naya password dalein">
+        <button type="button" class="pass-eye-btn" onclick="togglePassVisibility('reset-confirm',this)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="reset-err" id="reset-err-match">❌ Dono passwords match nahi kar rahe!</div>
+    </div>
+    <div class="reset-btns">
+      <button class="reset-cancel-btn" onclick="closeResetModal()">Cancel</button>
+      <button class="reset-save-btn" onclick="doPasswordReset()">🔒 Password Change Karo</button>
+    </div>
   </div>
 </div>
 
@@ -2719,18 +2802,18 @@ let firebaseReady = false;
 let currentFirebaseUser = null;
 let syncTimeout = null;
 
+let realtimeListenerActive = false;
+
 function initFirebase(){
   try{
-    firebaseApp = firebase.initializeApp(firebaseConfig);
-    db_fire     = firebase.firestore();
-    auth_fire   = firebase.auth();
+    firebaseApp  = firebase.initializeApp(firebaseConfig);
+    db_fire      = firebase.firestore();
+    auth_fire    = firebase.auth();
     storage_fire = firebase.storage();
     firebaseReady = true;
     console.log('Firebase connected!');
     showSyncStatus('connected');
 
-    // ── Firebase Auth State Listener ──
-    // Jab bhi auth state change ho (login/logout), yahan handle hoga
     auth_fire.onAuthStateChanged(function(user){
       currentFirebaseUser = user;
       if(user){
@@ -2742,11 +2825,58 @@ function initFirebase(){
       }
     });
 
+    // Real-time listener — dono devices auto-sync
+    startRealtimeSync();
+
   } catch(e){
     console.log('Firebase error:', e);
     firebaseReady = false;
     showSyncStatus('offline');
   }
+}
+
+function startRealtimeSync(){
+  if(realtimeListenerActive || !db_fire) return;
+  try{
+    db_fire.collection('shops').doc('fiza-main').onSnapshot(function(doc){
+      if(!doc.exists) return;
+      const fbData = doc.data();
+      const fbTime = fbData.lastUpdated ? new Date(fbData.lastUpdated).getTime() : 0;
+      let localTime = 0;
+      try{
+        const s = localStorage.getItem('fiza_db_v2');
+        if(s){ const p = JSON.parse(s); localTime = p.lastUpdated ? new Date(p.lastUpdated).getTime() : 0; }
+      }catch(e){}
+
+      if(fbTime > localTime + 1000){
+        console.log('[RealSync] Another device ne data save kiya — UI update ho raha hai');
+        DB.transactions = fbData.transactions || [];
+        DB.udhari       = fbData.udhari       || [];
+        DB.expenses     = fbData.expenses     || [];
+        DB.cashbook     = fbData.cashbook     || [];
+        DB.activityLog  = fbData.activityLog  || [];
+        if(fbData.settings) DB.settings = {...DB.settings, ...fbData.settings};
+        localStorage.setItem('fiza_db_v2', JSON.stringify({
+          transactions: DB.transactions, udhari: DB.udhari,
+          expenses: DB.expenses, cashbook: DB.cashbook,
+          activityLog: DB.activityLog, settings: DB.settings,
+          lastUpdated: fbData.lastUpdated
+        }));
+        try{
+          if(document.getElementById('app')?.style?.display !== 'none'){
+            if(typeof renderDashboard    === 'function') renderDashboard();
+            if(typeof updatePendingBadge === 'function') updatePendingBadge();
+            if(typeof updateUdhariBadge  === 'function') updateUdhariBadge();
+            if(typeof renderTransactions === 'function' && currentPage==='transactions') renderTransactions();
+          }
+        }catch(e){}
+        showSyncStatus('connected');
+        showToast('🔄 Dusre device se sync ho gaya!', 'success');
+      }
+    }, function(err){ console.log('[RealSync] Error:', err.message); });
+    realtimeListenerActive = true;
+    console.log('[RealSync] Live listener active ✅');
+  }catch(e){ console.log('[RealSync] Start failed:', e.message); }
 }
 
 function showSyncStatus(status){
@@ -2763,19 +2893,54 @@ function showSyncStatus(status){
 
 // Save to Firebase (debounced - waits 1s before saving)
 function saveDB(){
-  // Always save to localStorage first (instant, offline backup)
-  try{ localStorage.setItem('fiza_db_v2', JSON.stringify(DB)); }catch(e){}
+  const saveTime = new Date().toISOString();
 
-  // Then sync to Firebase — only if session is valid
+  // Always save to localStorage first with timestamp
+  try{
+    localStorage.setItem('fiza_db_v2', JSON.stringify({
+      transactions: DB.transactions || [],
+      udhari:       DB.udhari       || [],
+      expenses:     DB.expenses     || [],
+      cashbook:     DB.cashbook     || [],
+      activityLog:  DB.activityLog  || [],
+      settings:     DB.settings,
+      lastUpdated:  saveTime
+    }));
+  }catch(e){}
+
+  // Firebase sync — session check hataya taaki offline bhi kaam kare
   if(!firebaseReady){ showSyncStatus('offline'); return; }
-  if(!isSessionValid()){ showSyncStatus('offline'); return; }
 
   showSyncStatus('syncing');
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async ()=>{
     try{
-      // Security: Only save if Firebase Auth is active OR session is valid
       const docRef = db_fire.collection('shops').doc('fiza-main');
+
+      // Conflict check: Firebase pe fresh data ho toh merge karo
+      try{
+        const existing = await docRef.get();
+        if(existing.exists){
+          const fbTime = existing.data().lastUpdated
+            ? new Date(existing.data().lastUpdated).getTime() : 0;
+          const myTime = new Date(saveTime).getTime();
+          if(fbTime > myTime + 5000){
+            const fbData = existing.data();
+            const allTxns = [...(fbData.transactions||[])];
+            (DB.transactions||[]).forEach(t => {
+              if(!allTxns.find(x => x.id === t.id)) allTxns.push(t);
+            });
+            DB.transactions = allTxns;
+            localStorage.setItem('fiza_db_v2', JSON.stringify({
+              transactions: DB.transactions,
+              udhari: DB.udhari||[], expenses: DB.expenses||[],
+              cashbook: DB.cashbook||[], activityLog: DB.activityLog||[],
+              settings: DB.settings, lastUpdated: saveTime
+            }));
+          }
+        }
+      }catch(ce){ console.log('[Sync] Conflict check:', ce.message); }
+
       await docRef.set({
         transactions: DB.transactions   || [],
         udhari:       DB.udhari         || [],
@@ -2783,41 +2948,40 @@ function saveDB(){
         cashbook:     DB.cashbook       || [],
         activityLog:  (DB.activityLog   || []).slice(0,50),
         settings:     DB.settings,
-        lastUpdated:  new Date().toISOString(),
+        lastUpdated:  saveTime,
         lastSavedBy:  currentFirebaseUser ? currentFirebaseUser.uid : 'local-session'
       });
       showSyncStatus('connected');
     } catch(e){
       console.log('Firebase save error:', e.message);
       showSyncStatus('offline');
-      // Only show toast for permission errors, not connectivity
       if(e.code === 'permission-denied'){
         showToast('⚠️ Firebase permission denied — check Security Rules', 'error');
-      } else {
-        showToast('Save failed — check internet connection', 'error');
       }
     }
   }, 800);
 }
 
-// Load from Firebase
+// Load from Firebase — Smart Sync (timestamp comparison)
 async function loadDB(){
-  // Step 1: Load from localStorage first (instant)
+  // Step 1: Load from localStorage first (instant UI ke liye)
+  let localData = null;
+  let localTime  = 0;
   try{
     const s = localStorage.getItem('fiza_db_v2');
     if(s){
-      const p = JSON.parse(s);
-      DB.transactions = p.transactions||[];
-      DB.udhari       = p.udhari||[];
-      DB.expenses     = p.expenses||[];
-      DB.cashbook     = p.cashbook||[];
-      DB.activityLog  = p.activityLog||[];
-      if(p.settings) DB.settings = {...DB.settings, ...p.settings};
+      localData = JSON.parse(s);
+      localTime = localData.lastUpdated ? new Date(localData.lastUpdated).getTime() : 0;
+      DB.transactions = localData.transactions || [];
+      DB.udhari       = localData.udhari       || [];
+      DB.expenses     = localData.expenses     || [];
+      DB.cashbook     = localData.cashbook     || [];
+      DB.activityLog  = localData.activityLog  || [];
+      if(localData.settings) DB.settings = {...DB.settings, ...localData.settings};
       if(!DB.settings.ownerName || DB.settings.ownerName==='Sufyan Bhai'){
         DB.settings.ownerName = 'Computer Operator - Sufyan Ahemad';
       }
     }
-    // Only add demo data if truly first time (no localStorage AND no firebase)
     const isFirstTime = !s;
     if(isFirstTime && !firebaseReady) addDemoData();
   } catch(e){ console.log('localStorage error:', e); }
@@ -2830,42 +2994,65 @@ async function loadDB(){
     const doc = await db_fire.collection('shops').doc('fiza-main').get();
 
     if(doc.exists){
-      // Firebase has data — use it (it's the master copy)
-      const data = doc.data();
-      DB.transactions = data.transactions || [];
-      DB.udhari       = data.udhari       || [];
-      DB.expenses     = data.expenses     || [];
-      DB.cashbook     = data.cashbook     || [];
-      DB.activityLog  = data.activityLog  || [];
-      if(data.settings) DB.settings = {...DB.settings, ...data.settings};
-      if(!DB.settings.ownerName || DB.settings.ownerName==='Sufyan Bhai'){
-        DB.settings.ownerName = 'Computer Operator - Sufyan Ahemad';
+      const fbData = doc.data();
+      const fbTime = fbData.lastUpdated ? new Date(fbData.lastUpdated).getTime() : 0;
+      console.log('[Sync] FB time:', fbData.lastUpdated, '| Local time:', localData?.lastUpdated || 'none');
+
+      if(fbTime >= localTime){
+        // Firebase zyada fresh — Firebase se load karo
+        console.log('[Sync] Using Firebase data');
+        DB.transactions = fbData.transactions || [];
+        DB.udhari       = fbData.udhari       || [];
+        DB.expenses     = fbData.expenses     || [];
+        DB.cashbook     = fbData.cashbook     || [];
+        DB.activityLog  = fbData.activityLog  || [];
+        if(fbData.settings) DB.settings = {...DB.settings, ...fbData.settings};
+        if(!DB.settings.ownerName || DB.settings.ownerName==='Sufyan Bhai'){
+          DB.settings.ownerName = 'Computer Operator - Sufyan Ahemad';
+        }
+        localStorage.setItem('fiza_db_v2', JSON.stringify({
+          transactions: DB.transactions, udhari: DB.udhari,
+          expenses: DB.expenses, cashbook: DB.cashbook,
+          activityLog: DB.activityLog, settings: DB.settings,
+          lastUpdated: fbData.lastUpdated
+        }));
+        showSyncStatus('connected');
+      } else {
+        // Local zyada fresh — local se Firebase update karo + smart merge
+        console.log('[Sync] Local is fresher — pushing to Firebase');
+        const allTxns = [...(fbData.transactions||[])];
+        (localData?.transactions||[]).forEach(t => {
+          if(!allTxns.find(x => x.id === t.id)) allTxns.push(t);
+        });
+        DB.transactions = allTxns;
+        const mergedTime = localData.lastUpdated || new Date().toISOString();
+        await db_fire.collection('shops').doc('fiza-main').set({
+          transactions: DB.transactions,
+          udhari: DB.udhari||[], expenses: DB.expenses||[],
+          cashbook: DB.cashbook||[], activityLog: (DB.activityLog||[]).slice(0,50),
+          settings: DB.settings, lastUpdated: mergedTime, lastSavedBy: 'local-wins-sync'
+        });
+        localStorage.setItem('fiza_db_v2', JSON.stringify({
+          transactions: DB.transactions, udhari: DB.udhari,
+          expenses: DB.expenses, cashbook: DB.cashbook,
+          activityLog: DB.activityLog, settings: DB.settings, lastUpdated: mergedTime
+        }));
+        showSyncStatus('connected');
       }
-      // Update localStorage with latest Firebase data
-      localStorage.setItem('fiza_db_v2', JSON.stringify(DB));
-      showSyncStatus('connected');
     } else {
-      // First time on Firebase — check if we have local data to push
+      // Firebase pe kuch nahi — local data push karo
       const localStr = localStorage.getItem('fiza_db_v2');
       if(localStr){
-        // Push existing local data to Firebase
-        const localData = JSON.parse(localStr);
+        const ld = JSON.parse(localStr);
         await db_fire.collection('shops').doc('fiza-main').set({
-          transactions: localData.transactions || [],
-          udhari:       localData.udhari       || [],
-          expenses:     localData.expenses     || [],
-          cashbook:     localData.cashbook     || [],
-          activityLog:  [],
-          settings:     DB.settings,
-          lastUpdated:  new Date().toISOString()
+          transactions: ld.transactions||[], udhari: ld.udhari||[],
+          expenses: ld.expenses||[], cashbook: ld.cashbook||[],
+          activityLog: [], settings: DB.settings,
+          lastUpdated: new Date().toISOString()
         });
         showSyncStatus('connected');
       } else {
-        // Truly first time — start fresh (no demo data)
-        DB.transactions = [];
-        DB.udhari       = [];
-        DB.expenses     = [];
-        DB.cashbook     = [];
+        DB.transactions = []; DB.udhari = []; DB.expenses = []; DB.cashbook = [];
         showSyncStatus('connected');
       }
     }
@@ -2873,7 +3060,6 @@ async function loadDB(){
     console.log('Firebase load error:', e.message);
     showSyncStatus('offline');
   }
-
   // Step 3: Refresh UI after Firebase load
   try{
     if(document.getElementById('app')?.style?.display !== 'none'){
@@ -2989,8 +3175,10 @@ function _completeLogin(loginBtn, origText, firebaseAuth){
     const _u = DB.settings.user;
     const _p = DB.settings.pass;
     const _email = _u + '@fiza-digital-kendra.com';
+    // ✅ FIX: Save credentials for auto-reconnect on page reload
+    try{ localStorage.setItem('fiza_session_creds', JSON.stringify({email:_email, pass:_p})); }catch(e){}
     auth_fire.signInWithEmailAndPassword(_email, _p)
-      .then(uc=>{ currentFirebaseUser = uc.user; showSyncStatus('connected'); })
+      .then(uc=>{ currentFirebaseUser = uc.user; showSyncStatus('connected'); startRealtimeSync(); })
       .catch(()=>{ console.log('Firebase Auth background skip'); });
   }
 
@@ -7399,17 +7587,31 @@ function clearSession(){
 function isSessionValid(){
   try{
     // Check sessionStorage first (current tab)
-    if(sessionStorage.getItem('fiza_logged_in')==='1') return true;
+    if(sessionStorage.getItem('fiza_logged_in')==='1'){
+      // SessionStorage valid hai par localStorage se time bhi check karo
+      const s = localStorage.getItem('fiza_session');
+      if(s){
+        const sess = JSON.parse(s);
+        const twelveHours = 12 * 60 * 60 * 1000;
+        if(sess.loggedIn && (Date.now() - sess.time) < twelveHours) return true;
+        // 12 ghante expire — clear karo
+        clearSession();
+        return false;
+      }
+      return true;
+    }
     // Check localStorage (other tabs/same browser)
     const s = localStorage.getItem('fiza_session');
     if(s){
       const sess = JSON.parse(s);
-      // Session valid for 8 hours
-      const eightHours = 8 * 60 * 60 * 1000;
-      if(sess.loggedIn && (Date.now() - sess.time) < eightHours){
+      // ✅ 12 ghante ki session limit — next day new login zaroori
+      const twelveHours = 12 * 60 * 60 * 1000;
+      if(sess.loggedIn && (Date.now() - sess.time) < twelveHours){
         sessionStorage.setItem('fiza_logged_in','1');
         return true;
       }
+      // Session expire ho gayi — clean up
+      clearSession();
     }
   } catch(e){}
   return false;
@@ -8205,7 +8407,100 @@ function updateDocBadge(txnId){
   }
 }
 
+// ===================== PASSWORD TOGGLE =====================
+function togglePassVisibility(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  // Swap icon — eye vs eye-off
+  btn.innerHTML = isHidden
+    ? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+}
+
+// ===================== PASSWORD RESET MODAL =====================
+function openResetModal(){
+  // Reset all fields and messages
+  ['reset-old','reset-new','reset-confirm'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['reset-err-old','reset-err-match'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  const okEl = document.getElementById('reset-ok');
+  if(okEl) okEl.style.display='none';
+  document.getElementById('reset-overlay').classList.add('open');
+}
+
+function closeResetModal(){
+  document.getElementById('reset-overlay').classList.remove('open');
+}
+
+function doPasswordReset(){
+  const oldPass    = document.getElementById('reset-old').value;
+  const newPass    = document.getElementById('reset-new').value;
+  const confirmPass= document.getElementById('reset-confirm').value;
+
+  // Hide previous errors
+  document.getElementById('reset-err-old').style.display='none';
+  document.getElementById('reset-err-match').style.display='none';
+
+  // Validate old password
+  if(oldPass !== DB.settings.pass){
+    document.getElementById('reset-err-old').style.display='block';
+    return;
+  }
+  // Validate new password length
+  if(newPass.length < 4){
+    showToast('Naya password kam se kam 4 characters ka hona chahiye!', 'error');
+    return;
+  }
+  // Validate match
+  if(newPass !== confirmPass){
+    document.getElementById('reset-err-match').style.display='block';
+    return;
+  }
+  // All checks passed — save new password
+  DB.settings.pass = newPass;
+  saveDB();
+  // Update saved creds for auto Firebase sign-in
+  try{
+    const savedCreds = localStorage.getItem('fiza_session_creds');
+    if(savedCreds){
+      const c = JSON.parse(savedCreds);
+      c.pass = newPass;
+      localStorage.setItem('fiza_session_creds', JSON.stringify(c));
+    }
+  }catch(e){}
+  logActivity('Password Reset', 'Password successfully change kiya gaya');
+  document.getElementById('reset-ok').style.display='block';
+  document.getElementById('reset-old').value='';
+  document.getElementById('reset-new').value='';
+  document.getElementById('reset-confirm').value='';
+  setTimeout(()=>{ closeResetModal(); }, 2000);
+}
+
+// ===================== SESSION EXPIRY NOTICE =====================
+// Check session expiry every 5 minutes — agar expire ho gayi toh logout
+setInterval(function(){
+  if(document.getElementById('app')?.style?.display !== 'none'){
+    if(!isSessionValid()){
+      showToast('⏰ Session expire ho gayi! Please login karein.', 'error');
+      setTimeout(()=>{ clearSession(); location.reload(); }, 2500);
+    }
+  }
+}, 5 * 60 * 1000);
+
 // ===================== END DOCUMENT UPLOAD =====================
+
+// Close reset modal on overlay click
+document.getElementById('reset-overlay')?.addEventListener('click', function(e){
+  if(e.target === this) closeResetModal();
+});
+
+// ✅ FIX: Firebase pehle initialize karo, phir app load karo
+initFirebase();
 
 if(isSessionValid()){
   // Auto-login — skip login screen
@@ -8214,10 +8509,13 @@ if(isSessionValid()){
   loadDB().then(()=>{
     initApp();
     setTimeout(()=>safeCreateIcons(), 100);
+    // ✅ FIX: Session valid hai toh Firebase auth bhi silently sign in karo
+    autoFirebaseSignIn();
   }).catch(e=>{
     console.log('Load error:', e);
     initApp();
     setTimeout(()=>safeCreateIcons(), 100);
+    autoFirebaseSignIn();
   });
 } else {
   // Show login screen
@@ -8226,6 +8524,34 @@ if(isSessionValid()){
     console.log('Data pre-loaded');
   }).catch(e=>{});
 }
+
+// ✅ FIX: Auto Firebase sign-in using saved credentials
+function autoFirebaseSignIn(){
+  if(!firebaseReady || !auth_fire) return;
+  if(currentFirebaseUser){ showSyncStatus('connected'); return; }
+  // Try saved creds from last login
+  const savedCreds = localStorage.getItem('fiza_session_creds');
+  if(!savedCreds) return;
+  try{
+    const creds = JSON.parse(savedCreds);
+    if(creds.email && creds.pass){
+      auth_fire.signInWithEmailAndPassword(creds.email, creds.pass)
+        .then(uc=>{ currentFirebaseUser = uc.user; showSyncStatus('connected'); startRealtimeSync(); })
+        .catch(e=>{ console.log('[AutoSignIn] Failed:', e.message); showSyncStatus('offline'); });
+    }
+  }catch(e){}
+}
+
+// ✅ FIX: Network status monitor — online hone pe reconnect karo
+window.addEventListener('online', function(){
+  console.log('[Network] Back online — Firebase reconnecting...');
+  if(!firebaseReady){ initFirebase(); }
+  else { showSyncStatus('syncing'); autoFirebaseSignIn(); startRealtimeSync(); }
+});
+window.addEventListener('offline', function(){
+  console.log('[Network] Went offline');
+  showSyncStatus('offline');
+});
 
 // Init lucide icons for static HTML elements
 document.addEventListener('DOMContentLoaded',()=>{
