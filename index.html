@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <style>
 :root{
   --primary:#1a56db;--primary-dark:#1340a8;--primary-light:#e8f0fe;
@@ -581,6 +582,24 @@ body.dark-mode [style*="color:#999"]{color:#64748b !important}
 .info-box{background:var(--primary-light);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;color:#1e40af;margin-bottom:16px;display:flex;gap:8px}
 .ref-num{font-family:monospace;font-size:12px;background:var(--bg);padding:2px 6px;border-radius:4px}
 .divider{height:1px;background:var(--border);margin:20px 0}
+
+/* PORTAL INPUT DARK STYLE */
+#customer-portal-page input.form-control{
+  background:rgba(255,255,255,0.12) !important;
+  border-color:rgba(255,255,255,0.25) !important;
+  color:#fff !important;
+}
+#customer-portal-page input.form-control::placeholder{color:rgba(255,255,255,0.4)}
+#customer-portal-page input.form-control:focus{border-color:rgba(59,130,246,0.7) !important;box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
+
+/* SERVICE TRACKER */
+@media(max-width:768px){
+  #tracker-board{grid-template-columns:1fr !important}
+  #dash-bottom-row{grid-template-columns:1fr !important}
+}
+@media(max-width:480px){
+  #tracker-board{grid-template-columns:1fr !important}
+}
 </style>
 </head>
 <body>
@@ -644,8 +663,12 @@ body.dark-mode [style*="color:#999"]{color:#64748b !important}
       <div class="nav-item" onclick="showPage('cashbook')"><span class="nav-icon"><i data-lucide="book-open"></i></span> Cash Book</div>
       <div class="nav-item" onclick="showPage('customers')"><span class="nav-icon"><i data-lucide="users"></i></span> Customers</div>
       <div class="nav-item" onclick="showPage('bulk-wa')"><span class="nav-icon"><i data-lucide="send"></i></span> Bulk WhatsApp</div>
+      <div class="nav-item" onclick="showPage('service-tracker')"><span class="nav-icon"><i data-lucide="kanban"></i></span> Service Tracker</div>
+      <div class="nav-item" onclick="showPage('token-queue')"><span class="nav-icon"><i data-lucide="hash"></i></span> Token / Queue</div>
       <div class="nav-item" onclick="showPage('activity')"><span class="nav-icon"><i data-lucide="activity"></i></span> Activity Log</div>
       <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon"><i data-lucide="settings"></i></span> Settings / Profile</div>
+      <div class="nav-section-title">Customer Portal</div>
+      <div class="nav-item" onclick="openCustomerPortal()"><span class="nav-icon"><i data-lucide="external-link"></i></span> Portal Link / QR</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-info">
@@ -773,6 +796,47 @@ body.dark-mode [style*="color:#999"]{color:#64748b !important}
             <div class="card-body" style="padding:0" id="recent-txns"></div>
           </div>
         </div>
+        <!-- Monthly Profit Chart + Daily Summary -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px" id="dash-bottom-row">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" style="display:flex;align-items:center;gap:7px">
+                <i data-lucide="trending-up" style="width:16px;height:16px;color:var(--secondary)"></i>
+                6 Month Profit Chart
+              </span>
+            </div>
+            <div class="card-body" id="monthly-profit-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" style="display:flex;align-items:center;gap:7px">
+                <i data-lucide="send" style="width:16px;height:16px;color:#25D366"></i>
+                Quick Actions
+              </span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-whatsapp" onclick="sendDailySummaryWA()" style="display:flex;align-items:center;gap:8px;justify-content:center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Aaj ka Summary WA pe Bhejo
+                </button>
+                <button class="btn btn-outline" onclick="showPage('service-tracker')" style="display:flex;align-items:center;gap:8px;justify-content:center">
+                  <i data-lucide="kanban" style="width:15px;height:15px"></i>
+                  Service Tracker (Kanban)
+                </button>
+                <button class="btn btn-outline" onclick="showPage('token-queue')" style="display:flex;align-items:center;gap:8px;justify-content:center">
+                  <i data-lucide="hash" style="width:15px;height:15px"></i>
+                  Token / Queue System
+                </button>
+                <button class="btn btn-outline" onclick="openCustomerPortal()" style="display:flex;align-items:center;gap:8px;justify-content:center">
+                  <i data-lucide="external-link" style="width:15px;height:15px"></i>
+                  Customer Portal Link
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Pending -->
         <div class="card">
           <div class="card-header">
@@ -954,6 +1018,10 @@ body.dark-mode [style*="color:#999"]{color:#64748b !important}
               <div class="form-group">
                 <label class="form-label">PAN Number</label>
                 <input type="text" class="form-control" id="f-pan" placeholder="ABCDE1234F" maxlength="10">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date of Birth <span style="font-size:10px;color:var(--text-muted);text-transform:none;font-weight:400">(Birthday reminder ke liye)</span></label>
+                <input type="date" class="form-control" id="f-dob">
               </div>
               <div class="form-group">
                 <label class="form-label">Status <span class="req">*</span></label>
@@ -1787,10 +1855,179 @@ Use {name} to insert customer name automatically"></textarea>
                 </div>
               </div>
             </div>
+
+            <!-- CUSTOMER PORTAL SETTINGS -->
+            <div class="card" style="margin-top:20px">
+              <div class="card-header"><span class="card-title" style="display:flex;align-items:center;gap:7px"><i data-lucide="globe" style="width:16px;height:16px;color:var(--primary)"></i> Customer Portal Settings</span></div>
+              <div class="card-body">
+                <div style="background:var(--primary-light);border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:#1e40af;margin-bottom:16px">
+                  💡 Customer apna Mobile Number aur Naam dal ke apni service ka status dekh sakta hai. Aap yahan se portal customize kar sakte hain.
+                </div>
+                <div class="settings-field">
+                  <label class="form-label">Portal Welcome Message</label>
+                  <input type="text" class="form-control" id="s-portal-msg" placeholder="Hamari seva chunne ke liye shukriya!" value="Hamari seva chunne ke liye shukriya!">
+                </div>
+                <div class="settings-field">
+                  <label class="form-label">Show Status Details Level</label>
+                  <select class="form-control" id="s-portal-detail">
+                    <option value="basic">Basic — Sirf Status</option>
+                    <option value="full" selected>Full — Status + Service + Date + Ref</option>
+                  </select>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                  <button class="btn btn-primary" onclick="savePortalSettings()" style="display:flex;align-items:center;gap:6px">
+                    <i data-lucide="save" style="width:15px;height:15px"></i> Save Portal Settings
+                  </button>
+                  <button class="btn btn-outline" onclick="openCustomerPortal()" style="display:flex;align-items:center;gap:6px">
+                    <i data-lucide="external-link" style="width:15px;height:15px"></i> Portal Link / QR
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- BIRTHDAY REMINDER SETTINGS -->
+            <div class="card" style="margin-top:20px">
+              <div class="card-header"><span class="card-title" style="display:flex;align-items:center;gap:7px"><i data-lucide="cake" style="width:16px;height:16px;color:var(--pending)"></i> Birthday Reminders</span></div>
+              <div class="card-body">
+                <div id="birthday-reminders-list"></div>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn-primary btn-sm" onclick="checkBirthdayReminders()" style="display:flex;align-items:center;gap:5px">
+                    <i data-lucide="bell" style="width:13px;height:13px"></i> Check Today's Birthdays
+                  </button>
+                  <button class="btn btn-outline btn-sm" onclick="showPage('customers')">Manage Customers</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+
+      <!-- ===== SERVICE TRACKER PAGE ===== -->
+      <div class="page" id="page-service-tracker">
+        <div class="filters-row" style="margin-bottom:16px">
+          <div class="search-bar-wrap" style="flex:1">
+            <span class="search-icon" style="display:flex;align-items:center"><i data-lucide="search" style="width:15px;height:15px"></i></span>
+            <input type="text" class="form-control" id="tracker-search" placeholder="Customer naam ya service se dhundho..." oninput="renderServiceTracker()">
+          </div>
+          <select class="form-control" id="tracker-filter" onchange="renderServiceTracker()" style="max-width:160px">
+            <option value="active">Active Only</option>
+            <option value="all">All</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="showPage('add-transaction')" style="display:flex;align-items:center;gap:5px">
+            <i data-lucide="plus" style="width:14px;height:14px"></i> Add New
+          </button>
+        </div>
+        <div id="tracker-board" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px"></div>
+      </div>
+
+      <!-- ===== TOKEN QUEUE PAGE ===== -->
+      <div class="page" id="page-token-queue">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px">
+          <!-- Token Generator -->
+          <div class="card">
+            <div class="card-header"><span class="card-title" style="display:flex;align-items:center;gap:7px"><i data-lucide="hash" style="width:16px;height:16px;color:var(--primary)"></i> Token Generator</span></div>
+            <div class="card-body">
+              <div style="text-align:center;margin-bottom:20px">
+                <div id="current-token-display" style="font-size:72px;font-weight:900;color:var(--primary);line-height:1">--</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Current Token</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Customer Name</label>
+                <input type="text" class="form-control" id="token-name" placeholder="Customer ka naam likhein">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Service</label>
+                <input type="text" class="form-control" id="token-service" list="qa-service-list" placeholder="Service select karein">
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" onclick="issueToken()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i data-lucide="plus-circle" style="width:15px;height:15px"></i> Issue Token
+                </button>
+                <button class="btn btn-outline" onclick="callNextToken()" style="display:flex;align-items:center;gap:5px">
+                  <i data-lucide="chevron-right" style="width:15px;height:15px"></i> Next
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Queue List -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" style="display:flex;align-items:center;gap:7px"><i data-lucide="list-ordered" style="width:16px;height:16px;color:var(--secondary)"></i> Today's Queue</span>
+              <button class="btn btn-outline btn-sm" onclick="clearTokenQueue()">Clear</button>
+            </div>
+            <div class="card-body" style="padding:0;max-height:400px;overflow-y:auto" id="token-queue-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CUSTOMER PORTAL MODAL -->
+  <div class="modal-overlay" id="portal-info-modal">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <span class="modal-title" style="display:flex;align-items:center;gap:7px"><i data-lucide="external-link" style="width:16px;height:16px;color:var(--primary)"></i> Customer Portal</span>
+        <button class="modal-close" onclick="closeModal('portal-info-modal')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div style="background:var(--primary-light);border:1px solid #bfdbfe;border-radius:var(--radius);padding:16px;margin-bottom:16px;font-size:13px;color:#1e40af">
+          <div style="font-weight:700;margin-bottom:6px">📱 Customer Portal kya hai?</div>
+          Customer apna <strong>Mobile Number</strong> aur <strong>Naam</strong> dal ke apni service ka live status check kar sakta hai — Pending, Processing, Approved, etc.
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Portal URL (share karein)</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-control" id="portal-url-display" readonly style="font-size:12px;font-family:monospace">
+            <button class="btn btn-primary btn-sm" onclick="copyPortalURL()">Copy</button>
+          </div>
+        </div>
+        <div id="portal-qr-container" style="text-align:center;padding:16px">
+          <canvas id="portal-qr-canvas" width="180" height="180" style="border:1px solid var(--border);border-radius:var(--radius)"></canvas>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">QR Code scan karke portal khole</div>
+        </div>
+        <button class="btn btn-success" onclick="openPortalPage()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
+          <i data-lucide="eye" style="width:15px;height:15px"></i> Portal Preview Dekho
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER PORTAL PAGE (shown when portal is opened) -->
+  <div id="customer-portal-page" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a);z-index:10000;overflow-y:auto">
+    <div style="max-width:480px;margin:0 auto;padding:24px 16px">
+      <div style="text-align:center;margin-bottom:32px">
+        <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--primary),#3b82f6);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h1 id="portal-shop-name" style="color:#fff;font-size:18px;font-weight:700;margin-bottom:4px">Fiza Digital Sewa Kendra</h1>
+        <p style="color:#94a3b8;font-size:13px">Service Status Check</p>
+      </div>
+
+      <!-- Search Form -->
+      <div id="portal-search-section" style="background:rgba(255,255,255,0.07);border-radius:16px;padding:24px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1)">
+        <h2 style="color:#fff;font-size:16px;font-weight:600;margin-bottom:20px;text-align:center">Apni Service Ka Status Janein</h2>
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Mobile Number</label>
+          <input type="tel" id="portal-mobile" class="form-control" placeholder="10-digit mobile number" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;font-size:15px" maxlength="10">
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Aapka Naam</label>
+          <input type="text" id="portal-name" class="form-control" placeholder="Poora naam likhein" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;font-size:15px">
+        </div>
+        <button onclick="searchPortal()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),#3b82f6);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
+          Status Check Karein
+        </button>
+        <div id="portal-error" style="color:#fca5a5;font-size:13px;text-align:center;margin-top:10px;display:none"></div>
+      </div>
+
+      <!-- Results -->
+      <div id="portal-results" style="display:none;margin-top:20px"></div>
+
+      <button onclick="closePortalPage()" style="width:100%;padding:10px;background:rgba(255,255,255,0.08);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:16px">
+        ← Wapas Jaiye
+      </button>
     </div>
   </div>
 
@@ -2126,6 +2363,94 @@ Use {name} to insert customer name automatically"></textarea>
   </div>
 </div>
 
+<!-- DOCUMENT UPLOAD MODAL -->
+<div class="modal-overlay" id="doc-upload-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title" style="display:flex;align-items:center;gap:7px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Document Upload
+      </span>
+      <button class="modal-close" onclick="closeModal('doc-upload-modal')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="doc-txn-id">
+
+      <!-- Customer info display -->
+      <div id="doc-customer-info" style="background:var(--primary-light);border:1px solid #bfdbfe;border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1e40af"></div>
+
+      <!-- Upload Area -->
+      <div id="doc-upload-area" style="border:2px dashed var(--border);border-radius:var(--radius);padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg);margin-bottom:16px"
+           onclick="document.getElementById('doc-file-input').click()"
+           ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)'"
+           ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+           ondrop="handleDocDrop(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin-bottom:10px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Click ya Drag & Drop karein</div>
+        <div style="font-size:12px;color:var(--text-muted)">Aadhaar, PAN, Photo — JPG, PNG, PDF (max 5MB)</div>
+      </div>
+      <input type="file" id="doc-file-input" accept="image/*,.pdf" style="display:none" onchange="handleDocFileSelect(event)" multiple>
+
+      <!-- Document Label -->
+      <div class="form-group">
+        <label class="form-label">Document Label</label>
+        <select class="form-control" id="doc-label-select" onchange="if(this.value==='other')document.getElementById('doc-label-custom').style.display='block';else document.getElementById('doc-label-custom').style.display='none'">
+          <option value="Aadhaar Card">Aadhaar Card</option>
+          <option value="Aadhaar Back">Aadhaar Card (Back)</option>
+          <option value="PAN Card">PAN Card</option>
+          <option value="Passport Photo">Passport Photo</option>
+          <option value="Ration Card">Ration Card</option>
+          <option value="Driving Licence">Driving Licence</option>
+          <option value="Voter ID">Voter ID</option>
+          <option value="Application Form">Application Form</option>
+          <option value="Receipt / Slip">Receipt / Slip</option>
+          <option value="other">Custom Label...</option>
+        </select>
+        <input type="text" class="form-control" id="doc-label-custom" placeholder="Document ka naam likhein..." style="display:none;margin-top:8px">
+      </div>
+
+      <!-- Selected Files Preview -->
+      <div id="doc-files-preview" style="margin-bottom:4px"></div>
+
+      <!-- Upload Progress -->
+      <div id="doc-upload-progress" style="display:none">
+        <div style="background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;height:8px;margin-bottom:8px">
+          <div id="doc-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--primary),#60a5fa);transition:width .3s;width:0%"></div>
+        </div>
+        <div id="doc-progress-text" style="font-size:12px;color:var(--text-muted);text-align:center">Uploading...</div>
+      </div>
+
+      <!-- Already Uploaded Docs -->
+      <div id="doc-existing-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('doc-upload-modal')">Close</button>
+      <button class="btn btn-primary" id="doc-upload-btn" onclick="uploadDocuments()" style="display:flex;align-items:center;gap:6px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Karo
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENT VIEW MODAL -->
+<div class="modal-overlay" id="doc-view-modal">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <span class="modal-title" id="doc-view-title">Document</span>
+      <button class="modal-close" onclick="closeModal('doc-view-modal')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:12px" id="doc-view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('doc-view-modal')">Close</button>
+      <a id="doc-view-download" href="#" target="_blank" class="btn btn-primary" style="display:flex;align-items:center;gap:6px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+    </div>
+  </div>
+</div>
+
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detail-modal">
   <div class="modal">
@@ -2137,6 +2462,7 @@ Use {name} to insert customer name automatically"></textarea>
     <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
       <button class="btn btn-whatsapp" id="modal-wa-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="message-circle" style="width:15px;height:15px"></i> WhatsApp</button>
       <button class="btn btn-outline" id="modal-sms-btn" style="display:flex;align-items:center;gap:6px;border-color:#6b7280;color:#374151"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/></svg> SMS</button>
+      <button class="btn btn-outline" id="modal-doc-btn" onclick="" style="display:flex;align-items:center;gap:6px;border-color:var(--pending);color:var(--pending)"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> <span id="modal-doc-count">Docs</span></button>
       <button class="btn btn-outline" id="modal-print-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="printer" style="width:15px;height:15px"></i> Receipt</button>
       <button class="btn btn-outline" id="modal-inv-btn" style="display:flex;align-items:center;gap:6px"><i data-lucide="file-text" style="width:15px;height:15px"></i> Invoice</button>
       <button class="btn btn-outline" onclick="closeModal('detail-modal')">Close</button>
@@ -2388,7 +2714,7 @@ const firebaseConfig = {
   measurementId: "G-VSSLXX2NCE"
 };
 
-let firebaseApp, db_fire, auth_fire;
+let firebaseApp, db_fire, auth_fire, storage_fire;
 let firebaseReady = false;
 let currentFirebaseUser = null;
 let syncTimeout = null;
@@ -2398,6 +2724,7 @@ function initFirebase(){
     firebaseApp = firebase.initializeApp(firebaseConfig);
     db_fire     = firebase.firestore();
     auth_fire   = firebase.auth();
+    storage_fire = firebase.storage();
     firebaseReady = true;
     console.log('Firebase connected!');
     showSyncStatus('connected');
@@ -2752,6 +3079,10 @@ function initApp(){
   setTimeout(()=>{ if(window.lucide) safeCreateIcons(); },150);
   // Fix responsive layout on load
   setTimeout(()=>{ if(typeof fixChartsResponsive==='function') fixChartsResponsive(); },200);
+  // Birthday check
+  setTimeout(()=>{ if(typeof autoBirthdayCheck==='function') autoBirthdayCheck(); },1000);
+  // Portal URL check
+  setTimeout(()=>{ if(typeof checkPortalURL==='function') checkPortalURL(); },300);
 }
 
 function populateServiceFilters(){
@@ -3091,6 +3422,7 @@ function renderDashboard(){
     if(typeof renderAlertBanners==='function') renderAlertBanners();
     if(typeof renderWeeklyChart==='function') renderWeeklyChart();
     if(typeof renderServiceDonut==='function') renderServiceDonut();
+    if(typeof renderMonthlyProfitChart==='function') renderMonthlyProfitChart();
     safeCreateIcons();
   },50);
 }
@@ -3131,6 +3463,7 @@ function renderTransactions(){
       <td><div style="display:flex;gap:4px;flex-wrap:wrap">
         <button class="btn btn-outline btn-sm" onclick="viewTxn('${t.id}')" title="View" style="padding:5px 8px"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="btn btn-outline btn-sm" onclick="editTxn('${t.id}')" title="Edit" style="padding:5px 8px"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-outline btn-sm" onclick="openDocUpload('${t.id}')" title="Documents" style="padding:5px 8px;${(t.documents&&t.documents.length)?'border-color:var(--pending);color:var(--pending)':''}"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>${(t.documents&&t.documents.length)?`<span style="font-size:10px;margin-left:2px;font-weight:700">${t.documents.length}</span>`:''}</button>
         ${t.mobile?`<button class="btn btn-whatsapp btn-sm" onclick="sendWANotif('${t.id}')" title="WhatsApp" style="padding:5px 8px"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
         <button class="btn btn-sm" onclick="sendSMSFromTxn('${t.id}')" title="SMS" style="padding:5px 8px;background:#6b7280;color:#fff"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="9" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="15" y1="10" x2="15" y2="10"/></svg></button>`:''}
         <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);padding:5px 8px" onclick="deleteTxn('${t.id}')" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
@@ -3447,6 +3780,7 @@ function saveTransaction(){
     ref:document.getElementById('f-ref').value.trim(),
     aadhaar:document.getElementById('f-aadhaar').value.trim(),
     pan:document.getElementById('f-pan').value.trim().toUpperCase(),
+    dob:document.getElementById('f-dob')?.value||'',
     status:document.getElementById('f-status').value,
     amount,
     govtCostOverride:isNaN(govtCostOverride)?null:govtCostOverride,
@@ -3466,6 +3800,7 @@ function clearForm(){
   document.getElementById('f-status').value='pending';
   document.getElementById('f-date').value=getTodayStr();
   const gc=document.getElementById('f-govt-cost'); if(gc) gc.value='';
+  const dob=document.getElementById('f-dob'); if(dob) dob.value='';
   const tag=document.getElementById('f-govt-default-tag'); if(tag) tag.style.display='none';
   const pp=document.getElementById('f-profit-preview'); if(pp) pp.style.display='none';
   clearAmountBtns();
@@ -3896,6 +4231,13 @@ function viewTxn(id){
     smsBtn.disabled = !t.mobile;
     smsBtn.style.opacity = t.mobile ? '1' : '0.5';
     smsBtn.onclick = ()=>{ closeModal('detail-modal'); sendSMSFromTxn(id); };
+  }
+  // Wire up Docs button
+  const docBtn = document.getElementById('modal-doc-btn');
+  if(docBtn){
+    docBtn.onclick = () => openDocUpload(id);
+    const count = (t.documents && t.documents.length) ? t.documents.length : 0;
+    document.getElementById('modal-doc-count').textContent = count > 0 ? `Docs (${count})` : 'Docs';
   }
   document.getElementById('detail-modal').classList.add('open');
   setTimeout(()=>{ if(window.lucide) safeCreateIcons(); }, 50);
@@ -4388,108 +4730,220 @@ function renderUdhari(){
     return;
   }
 
-  document.getElementById('udhari-list').innerHTML=customers.map(cust=>{
+  // ── COMPACT CARD — click karo to open profile modal ──
+  document.getElementById('udhari-list').innerHTML=`
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+  ${customers.map(cust=>{
     const borderCol=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
     const statusText=cust.totalDue===0?'Cleared':cust.hasOverdue?'Overdue':'Outstanding';
     const statusBg=cust.totalDue===0?'var(--success-light)':cust.hasOverdue?'var(--danger-light)':'var(--warning-light)';
     const statusTxt=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
-
-    // Sort entries newest first
-    const sortedEntries=[...cust.entries].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
-
-    // Build services list
-    const serviceRows=sortedEntries.map(u=>{
-      const due=getTotalDue(u);
-      const paid=getTotalPaidAll(u);
-      const isOvr=u.dueDate&&u.dueDate<today&&due>0;
-      const sColor=due===0?'var(--success)':isOvr?'var(--danger)':'var(--warning)';
-      const sBg=due===0?'var(--success-light)':isOvr?'var(--danger-light)':'var(--warning-light)';
-      const sLabel=due===0?'✓ Cleared':isOvr?'⚠ Overdue':'● Due';
-
-      // Payment history for this entry
-      const payHist=(u.payments||[]).map(p=>`
-        <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;color:var(--text-muted)">
-          <span>${formatDateDisplay(p.date)}${p.notes?' — '+p.notes:''}</span>
-          <span style="color:var(--success);font-weight:600">+₹${p.amount.toLocaleString('en-IN')}</span>
-        </div>`).join('');
-
-      return `
-      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:8px;border-left:3px solid ${sColor}">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px">
-          <div>
-            <span style="font-size:13px;font-weight:700;color:var(--text)">${esc(u.service||'General Service')}</span>
-            <span style="font-size:11px;color:var(--text-muted);margin-left:8px">${formatDateDisplay((u.createdAt||'').split('T')[0])}</span>
-            ${u.dueDate?`<span style="font-size:11px;color:${isOvr?'var(--danger)':'var(--text-muted)'};margin-left:6px">· Due: ${formatDateDisplay(u.dueDate)}</span>`:''}
-          </div>
-          <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${sBg};color:${sColor}">${sLabel}</span>
+    const avatarBg=cust.totalDue===0?'var(--success-light)':cust.hasOverdue?'var(--danger-light)':'#fef3c7';
+    const avatarTxt=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
+    const custKeyEncoded=encodeURIComponent(cust.key);
+    return `
+    <div onclick="openUdhariProfile('${custKeyEncoded}')"
+      style="background:var(--card);border-radius:var(--radius);border:1px solid var(--border);border-left:4px solid ${borderCol};
+             padding:13px 15px;cursor:pointer;transition:box-shadow .15s,transform .15s;box-shadow:var(--shadow)"
+      onmouseover="this.style.boxShadow='var(--shadow-md)';this.style.transform='translateY(-1px)'"
+      onmouseout="this.style.boxShadow='var(--shadow)';this.style.transform='translateY(0)'">
+      <!-- Row 1: Avatar + Name + Status -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:40px;height:40px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;
+                    justify-content:center;font-weight:800;font-size:17px;color:${avatarTxt};flex-shrink:0">
+          ${cust.name.charAt(0).toUpperCase()}
         </div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${payHist?'8px':'0'}">
-          <div style="font-size:12px;color:var(--text-muted)">Charge: <strong style="color:var(--text)">₹${(u.amount||0).toLocaleString('en-IN')}</strong></div>
-          <div style="font-size:12px;color:var(--text-muted)">Paid: <strong style="color:var(--success)">₹${paid.toLocaleString('en-IN')}</strong></div>
-          <div style="font-size:12px;color:var(--text-muted)">Baki: <strong style="color:${due>0?'var(--danger)':'var(--success)'}">₹${due.toLocaleString('en-IN')}</strong></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cust.name)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${cust.mobile?'📱 '+cust.mobile:'No mobile'} · ${cust.entries.length} service${cust.entries.length>1?'s':''}</div>
         </div>
-        ${payHist?`<div style="border-top:1px solid var(--border);padding-top:6px">${payHist}</div>`:''}
-        ${u.notes?`<div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-style:italic">📝 ${esc(u.notes)}</div>`:''}
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">
-          ${due>0?`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${u.id}')" style="font-size:11px;padding:4px 8px">✓ Mark Payment</button>`:''}
-          <button class="btn btn-outline btn-sm" onclick="editUdhari('${u.id}')" style="font-size:11px;padding:4px 8px">✏ Edit</button>
-          <button class="btn btn-sm" onclick="deleteUdhari('${u.id}')" style="font-size:11px;padding:4px 8px;background:var(--danger-light);color:var(--danger)">🗑</button>
-          ${due>0?`<button class="btn btn-sm" onclick="generateUdhariImage('${u.id}')" style="font-size:11px;padding:4px 8px;background:#6366f1;color:#fff">🖼 Image</button>`:''}
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${statusBg};color:${statusTxt};flex-shrink:0">${statusText}</span>
+      </div>
+      <!-- Row 2: Amount summary -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden">
+        <div style="padding:7px 8px;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1px">Charge</div>
+          <div style="font-size:13px;font-weight:700">₹${cust.totalCharge.toLocaleString('en-IN')}</div>
         </div>
-      </div>`;
-    }).join('');
+        <div style="padding:7px 8px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1px">Jama</div>
+          <div style="font-size:13px;font-weight:700;color:var(--success)">₹${cust.totalPaid.toLocaleString('en-IN')}</div>
+        </div>
+        <div style="padding:7px 8px;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1px">Baki</div>
+          <div style="font-size:14px;font-weight:800;color:${cust.totalDue>0?'var(--danger)':'var(--success)'}">₹${cust.totalDue.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <!-- Row 3: Tap hint -->
+      <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text-light)">
+        👆 Tap to view full profile & history
+      </div>
+    </div>`;
+  }).join('')}
+  </div>`;
+}
+
+// ── UDHARI PROFILE MODAL ──
+function openUdhariProfile(custKeyEncoded){
+  const custKey=decodeURIComponent(custKeyEncoded);
+  const today=getTodayStr();
+
+  // Rebuild custMap for this customer
+  const custMap={};
+  DB.udhari.forEach(u=>{
+    const mob=(u.mobile||'').replace(/\D/g,'').slice(-10);
+    const key=(u.name.trim().toLowerCase())+'|'+(mob||u.name.trim().toLowerCase());
+    if(!custMap[key]){
+      custMap[key]={key,name:u.name,mobile:u.mobile||'',entries:[],totalCharge:0,totalPaid:0,totalDue:0,hasOverdue:false};
+    }
+    const due=getTotalDue(u);
+    const paid=getTotalPaidAll(u);
+    custMap[key].entries.push(u);
+    custMap[key].totalCharge+=(u.amount||0);
+    custMap[key].totalPaid+=paid;
+    custMap[key].totalDue+=due;
+    if(u.dueDate&&u.dueDate<today&&due>0) custMap[key].hasOverdue=true;
+  });
+
+  const cust=custMap[custKey];
+  if(!cust) return;
+
+  const sortedEntries=[...cust.entries].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  const borderCol=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
+  const statusText=cust.totalDue===0?'Cleared':cust.hasOverdue?'Overdue':'Outstanding';
+  const statusBg=cust.totalDue===0?'var(--success-light)':cust.hasOverdue?'var(--danger-light)':'var(--warning-light)';
+  const statusTxt=cust.totalDue===0?'var(--success)':cust.hasOverdue?'var(--danger)':'var(--warning)';
+
+  // Build service history rows
+  const serviceRows=sortedEntries.map(u=>{
+    const due=getTotalDue(u);
+    const paid=getTotalPaidAll(u);
+    const isOvr=u.dueDate&&u.dueDate<today&&due>0;
+    const sColor=due===0?'var(--success)':isOvr?'var(--danger)':'var(--warning)';
+    const sBg=due===0?'var(--success-light)':isOvr?'var(--danger-light)':'var(--warning-light)';
+    const sLabel=due===0?'✓ Cleared':isOvr?'⚠ Overdue':'● Due';
+
+    const payHist=(u.payments||[]).map(p=>`
+      <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 10px;background:var(--success-light);border-radius:4px;margin-top:4px">
+        <span style="color:var(--text-muted)">${formatDateDisplay(p.date)}${p.notes?' — '+p.notes:''}</span>
+        <span style="color:var(--success);font-weight:700">+₹${p.amount.toLocaleString('en-IN')}</span>
+      </div>`).join('');
 
     return `
-    <div class="card" style="margin-bottom:14px;border-left:4px solid ${borderCol}">
-      <div class="card-body" style="padding:16px">
-
-        <!-- Customer Header -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:44px;height:44px;border-radius:50%;background:${cust.totalDue===0?'var(--success-light)':'var(--danger-light)'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:${cust.totalDue===0?'var(--success)':'var(--danger)'};flex-shrink:0">${cust.name.charAt(0).toUpperCase()}</div>
-            <div>
-              <div style="font-weight:800;font-size:16px">${esc(cust.name)}</div>
-              <div style="font-size:12px;color:var(--text-muted)">${cust.mobile?'📱 '+cust.mobile:'No mobile'} · ${cust.entries.length} service${cust.entries.length>1?'s':''}</div>
-            </div>
-          </div>
-          <span style="font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;background:${statusBg};color:${statusTxt}">${statusText}</span>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;border-left:3px solid ${sColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <div>
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${esc(u.service||'General Service')}</span>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:8px">${formatDateDisplay((u.createdAt||'').split('T')[0])}</span>
+          ${u.dueDate?`<span style="font-size:11px;color:${isOvr?'var(--danger)':'var(--text-muted)'};margin-left:6px">· Due: ${formatDateDisplay(u.dueDate)}</span>`:''}
         </div>
-
-        <!-- Total Summary Bar -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px">
-          <div style="padding:10px;text-align:center">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Kul Charge</div>
-            <div style="font-size:16px;font-weight:700">₹${cust.totalCharge.toLocaleString('en-IN')}</div>
-          </div>
-          <div style="padding:10px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Jama</div>
-            <div style="font-size:16px;font-weight:700;color:var(--success)">₹${cust.totalPaid.toLocaleString('en-IN')}</div>
-          </div>
-          <div style="padding:10px;text-align:center">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Total Baki</div>
-            <div style="font-size:18px;font-weight:800;color:${cust.totalDue>0?'var(--danger)':'var(--success)'}">₹${cust.totalDue.toLocaleString('en-IN')}</div>
-          </div>
-        </div>
-
-        <!-- Services History -->
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px">📋 Service History</div>
-        ${serviceRows}
-
-        <!-- Action Buttons -->
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-          <button class="btn btn-primary btn-sm" onclick="openAddUdhariForCustomer('${esc(cust.name)}','${cust.mobile}')" style="display:flex;align-items:center;gap:4px;font-size:12px">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Naya Kaam Add Karo
-          </button>
-          ${cust.mobile?`
-          <button class="btn btn-whatsapp btn-sm" onclick="sendUdhariWA('${sortedEntries[0].id}')" style="font-size:12px">📱 WhatsApp</button>
-          <button class="btn btn-sm" onclick="sendUdhariSMS('${sortedEntries[0].id}')" style="font-size:12px;background:#6b7280;color:#fff">💬 SMS</button>
-          `:''}
-        </div>
-
+        <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${sBg};color:${sColor}">${sLabel}</span>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:${payHist?'8px':'4px'}">
+        <div style="font-size:12px;color:var(--text-muted)">Charge: <strong style="color:var(--text)">₹${(u.amount||0).toLocaleString('en-IN')}</strong></div>
+        <div style="font-size:12px;color:var(--text-muted)">Paid: <strong style="color:var(--success)">₹${paid.toLocaleString('en-IN')}</strong></div>
+        <div style="font-size:12px;color:var(--text-muted)">Baki: <strong style="color:${due>0?'var(--danger)':'var(--success)'}">₹${due.toLocaleString('en-IN')}</strong></div>
+      </div>
+      ${payHist?`<div>${payHist}</div>`:''}
+      ${u.notes?`<div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic">📝 ${esc(u.notes)}</div>`:''}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">
+        ${due>0?`<button class="btn btn-success btn-sm" onclick="openPaymentModal('${u.id}')" style="font-size:11px;padding:5px 10px">✓ Mark Payment</button>`:''}
+        <button class="btn btn-outline btn-sm" onclick="editUdhari('${u.id}')" style="font-size:11px;padding:5px 10px">✏ Edit</button>
+        <button class="btn btn-sm" onclick="deleteUdhariFromProfile('${u.id}','${encodeURIComponent(custKey)}')" style="font-size:11px;padding:5px 10px;background:var(--danger-light);color:var(--danger)">🗑</button>
       </div>
     </div>`;
   }).join('');
+
+  // Inject into modal
+  let modal=document.getElementById('udhari-profile-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='udhari-profile-modal';
+    modal.className='modal-overlay';
+    modal.style.cssText='z-index:210';
+    modal.onclick=function(e){ if(e.target===modal) closeUdhariProfile(); };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML=`
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header" style="border-left:4px solid ${borderCol};border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:${cust.totalDue===0?'var(--success-light)':'var(--danger-light)'};
+                    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;
+                    color:${cust.totalDue===0?'var(--success)':'var(--danger)'};flex-shrink:0">
+          ${cust.name.charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <div class="modal-title">${esc(cust.name)}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${cust.mobile?'📱 '+cust.mobile:'No mobile'} · ${cust.entries.length} service${cust.entries.length>1?'s':''}</div>
+        </div>
+        <span style="font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;background:${statusBg};color:${statusTxt};margin-left:auto">${statusText}</span>
+      </div>
+      <button class="modal-close" onclick="closeUdhariProfile()" style="margin-left:12px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:20px">
+      <!-- Summary bar -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:20px;border:1px solid var(--border)">
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Kul Charge</div>
+          <div style="font-size:18px;font-weight:700">₹${cust.totalCharge.toLocaleString('en-IN')}</div>
+        </div>
+        <div style="padding:12px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Jama</div>
+          <div style="font-size:18px;font-weight:700;color:var(--success)">₹${cust.totalPaid.toLocaleString('en-IN')}</div>
+        </div>
+        <div style="padding:12px;text-align:center">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">Total Baki</div>
+          <div style="font-size:20px;font-weight:800;color:${cust.totalDue>0?'var(--danger)':'var(--success)'}">₹${cust.totalDue.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+      <!-- Service history -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px">📋 Service History</div>
+      ${serviceRows}
+    </div>
+    <!-- Footer actions -->
+    <div class="modal-footer" style="justify-content:flex-start;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="openAddUdhariForCustomer('${esc(cust.name)}','${cust.mobile}');closeUdhariProfile()" style="display:flex;align-items:center;gap:5px;font-size:12px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Naya Kaam Add Karo
+      </button>
+      ${cust.mobile&&sortedEntries.length>0?`
+      <button class="btn btn-whatsapp btn-sm" onclick="sendUdhariWA('${sortedEntries[0].id}')" style="font-size:12px">📱 WhatsApp</button>
+      <button class="btn btn-sm" onclick="sendUdhariSMS('${sortedEntries[0].id}')" style="font-size:12px;background:#6b7280;color:#fff">💬 SMS</button>
+      `:''}
+      <button class="btn btn-sm" onclick="generateUdhariImage('${encodeURIComponent(custKey)}',true)" style="font-size:12px;background:#6366f1;color:#fff;display:flex;align-items:center;gap:5px">
+        🖼 Download Image
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="closeUdhariProfile()" style="margin-left:auto;font-size:12px">Close</button>
+    </div>
+  </div>`;
+
+  modal.classList.add('open');
+}
+
+function closeUdhariProfile(){
+  const modal=document.getElementById('udhari-profile-modal');
+  if(modal) modal.classList.remove('open');
+}
+
+function deleteUdhariFromProfile(id, custKeyEncoded){
+  if(!confirm('Is entry ko delete karo?')) return;
+  DB.udhari=DB.udhari.filter(x=>x.id!==id);
+  saveDB(); updateUdhariBadge();
+  // Refresh modal — check if customer still has entries
+  const custKey=decodeURIComponent(custKeyEncoded);
+  const stillHas=DB.udhari.some(u=>{
+    const mob=(u.mobile||'').replace(/\D/g,'').slice(-10);
+    const key=(u.name.trim().toLowerCase())+'|'+(mob||u.name.trim().toLowerCase());
+    return key===custKey;
+  });
+  renderUdhari();
+  if(stillHas){ openUdhariProfile(custKeyEncoded); }
+  else { closeUdhariProfile(); }
+  showToast('Entry deleted','success');
 }
 
 // ── Naya kaam add karo usi customer ke liye ──
@@ -4630,7 +5084,16 @@ function saveUdhari(){
     DB.udhari.push(entry);
   }
   saveDB(); updateUdhariBadge(); closeModal('udhari-modal');
-  renderUdhari(); showToast('Due entry saved successfully!','success');
+  renderUdhari();
+  // Refresh profile modal if open
+  const _pm=document.getElementById('udhari-profile-modal');
+  if(_pm&&_pm.classList.contains('open')){
+    const _mob=(document.getElementById('um-mobile').value||'').replace(/\D/g,'').slice(-10);
+    const _nm=(document.getElementById('um-name').value||'').trim().toLowerCase();
+    const _key=_nm+'|'+(_mob||_nm);
+    openUdhariProfile(encodeURIComponent(_key));
+  }
+  showToast('Due entry saved successfully!','success');
 }
 
 function deleteUdhari(id){
@@ -4671,6 +5134,13 @@ function savePayment(){
   u.updatedAt=new Date().toISOString();
   saveDB();updateUdhariBadge();closeModal('payment-modal');
   renderUdhari();
+  // Refresh profile modal if it's open
+  const profModal=document.getElementById('udhari-profile-modal');
+  if(profModal&&profModal.classList.contains('open')){
+    const mob=(u.mobile||'').replace(/\D/g,'').slice(-10);
+    const key=(u.name.trim().toLowerCase())+'|'+(mob||u.name.trim().toLowerCase());
+    openUdhariProfile(encodeURIComponent(key));
+  }
   showToast(remaining<=0?'Payment complete! Account fully cleared!':'Payment recorded successfully!','success');
 }
 
@@ -4732,136 +5202,208 @@ function sendUdhariSMS(id){
   showToast('SMS app khul rahi hai...','success');
 }
 
-// ===================== UDHARI IMAGE GENERATOR =====================
-function generateUdhariImage(id){
-  const u = DB.udhari.find(x=>x.id===id); if(!u) return;
+// ===================== UDHARI IMAGE GENERATOR (CUSTOMER-COMBINED) =====================
+// Ek bhi entry ka id do — customer ki saari entries ka combined image banega
+function generateUdhariImage(idOrKey, isCustomerKey){
   const s = DB.settings;
-  const due     = getTotalDue(u);
-  const paid    = getTotalPaidAll(u);
-  const total   = u.amount || 0;
-  const dueDate = u.dueDate ? formatDateDisplay(u.dueDate) : '—';
-  const today   = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const today = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
-  // Canvas se image banao
-  const canvas  = document.createElement('canvas');
-  canvas.width  = 720;
-  canvas.height = 460;
-  const ctx     = canvas.getContext('2d');
+  // ── Gather all entries for this customer ──
+  let entries = [];
+  let custName = '', custMobile = '';
 
-  // ── Background gradient ──
-  const grad = ctx.createLinearGradient(0,0,720,460);
-  grad.addColorStop(0,'#0f172a');
-  grad.addColorStop(1,'#1e3a5f');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,720,460);
+  if(isCustomerKey){
+    // Called from profile modal footer with customer key
+    const custKey = decodeURIComponent(idOrKey);
+    DB.udhari.forEach(u=>{
+      const mob=(u.mobile||'').replace(/\D/g,'').slice(-10);
+      const key=(u.name.trim().toLowerCase())+'|'+(mob||u.name.trim().toLowerCase());
+      if(key===custKey) entries.push(u);
+    });
+    if(entries.length===0) return;
+    custName   = entries[0].name;
+    custMobile = entries[0].mobile||'';
+  } else {
+    // Called with single entry id — find all entries of same customer
+    const ref = DB.udhari.find(x=>x.id===idOrKey); if(!ref) return;
+    custName   = ref.name;
+    custMobile = ref.mobile||'';
+    const mob  = custMobile.replace(/\D/g,'').slice(-10);
+    const key  = custName.trim().toLowerCase()+'|'+(mob||custName.trim().toLowerCase());
+    DB.udhari.forEach(u=>{
+      const um=(u.mobile||'').replace(/\D/g,'').slice(-10);
+      const uk=u.name.trim().toLowerCase()+'|'+(um||u.name.trim().toLowerCase());
+      if(uk===key) entries.push(u);
+    });
+  }
+
+  // Sort newest first
+  entries.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+
+  // ── Totals ──
+  const totalCharge = entries.reduce((s,u)=>s+(u.amount||0),0);
+  const totalPaid   = entries.reduce((s,u)=>s+getTotalPaidAll(u),0);
+  const totalDue    = entries.reduce((s,u)=>s+getTotalDue(u),0);
+  const todayStr    = getTodayStr();
+  const hasOverdue  = entries.some(u=>u.dueDate&&u.dueDate<todayStr&&getTotalDue(u)>0);
+
+  // ── Canvas height: header(230) + per entry(80) + footer(110) ──
+  const W = 720;
+  const entryH = 80;
+  const H = 240 + entries.length * entryH + 130;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // ── Background ──
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0,0,W,H);
 
   // ── Top accent bar ──
-  const topBar = ctx.createLinearGradient(0,0,720,0);
-  topBar.addColorStop(0,'#1a56db');
-  topBar.addColorStop(1,'#3b82f6');
-  ctx.fillStyle = topBar;
-  ctx.fillRect(0,0,720,6);
+  ctx.fillStyle = '#1a56db';
+  ctx.fillRect(0,0,W,6);
 
-  // ── Card box (white area) ──
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  roundRect(ctx, 30, 30, 660, 400, 18);
-  ctx.fill();
+  // ── Header card ──
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  roundRect(ctx,24,18,W-48,H-36,16); ctx.fill();
 
   // ── Shop name ──
   ctx.fillStyle = '#93c5fd';
-  ctx.font = 'bold 15px Arial';
+  ctx.font = 'bold 14px Arial';
   ctx.textAlign = 'left';
-  ctx.fillText(s.shopName.toUpperCase(), 60, 75);
+  ctx.fillText((s.shopName||'Shop').toUpperCase(), 52, 55);
 
-  // ── "PAYMENT REMINDER" badge ──
-  ctx.fillStyle = '#dc2626';
-  roundRect(ctx, 490, 55, 180, 30, 8);
-  ctx.fill();
+  // ── PAYMENT REMINDER badge ──
+  ctx.fillStyle = hasOverdue?'#dc2626':'#d97706';
+  roundRect(ctx, W-220, 36, 196, 28, 7); ctx.fill();
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 13px Arial';
+  ctx.font = 'bold 12px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('PAYMENT REMINDER', 580, 75);
+  ctx.fillText(hasOverdue?'⚠ PAYMENT OVERDUE':'💰 PAYMENT REMINDER', W-122, 55);
 
   // ── Divider ──
-  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,90); ctx.lineTo(660,90); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(52,68); ctx.lineTo(W-52,68); ctx.stroke();
 
-  // ── Customer Name ──
+  // ── Customer name ──
   ctx.fillStyle = '#f1f5f9';
-  ctx.font = 'bold 28px Arial';
+  ctx.font = 'bold 26px Arial';
   ctx.textAlign = 'left';
-  ctx.fillText(u.name, 60, 135);
+  ctx.fillText(custName, 52, 108);
 
-  // ── Service ──
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '14px Arial';
-  ctx.fillText('Service: ' + (u.service || 'General'), 60, 160);
+  // ── Mobile ──
+  if(custMobile){
+    ctx.fillStyle = '#64748b';
+    ctx.font = '13px Arial';
+    ctx.fillText('📱 '+custMobile+'   •   '+entries.length+' service'+(entries.length>1?'s':''), 52, 130);
+  }
 
-  // ── Amount box ──
-  const amtGrad = ctx.createLinearGradient(60,185,400,185);
-  amtGrad.addColorStop(0,'rgba(220,38,38,0.25)');
-  amtGrad.addColorStop(1,'transparent');
-  ctx.fillStyle = amtGrad;
-  roundRect(ctx, 60, 180, 340, 90, 12);
-  ctx.fill();
+  // ── Total summary boxes ──
+  const boxY = 148; const boxH = 56; const boxW = (W-104-24)/3;
+  // Charge box
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx,52,boxY,boxW,boxH,10); ctx.fill();
+  ctx.fillStyle='#94a3b8'; ctx.font='11px Arial'; ctx.textAlign='center';
+  ctx.fillText('KUL CHARGE',52+boxW/2,boxY+18);
+  ctx.fillStyle='#e2e8f0'; ctx.font='bold 20px Arial';
+  ctx.fillText('₹'+totalCharge.toLocaleString('en-IN'),52+boxW/2,boxY+42);
+  // Jama box
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx,52+boxW+12,boxY,boxW,boxH,10); ctx.fill();
+  ctx.fillStyle='#94a3b8'; ctx.font='11px Arial';
+  ctx.fillText('JAMA',52+boxW+12+boxW/2,boxY+18);
+  ctx.fillStyle='#4ade80'; ctx.font='bold 20px Arial';
+  ctx.fillText('₹'+totalPaid.toLocaleString('en-IN'),52+boxW+12+boxW/2,boxY+42);
+  // Baki box
+  ctx.fillStyle = totalDue>0?'rgba(220,38,38,0.18)':'rgba(74,222,128,0.12)';
+  roundRect(ctx,52+boxW*2+24,boxY,boxW,boxH,10); ctx.fill();
+  ctx.fillStyle='#fca5a5'; ctx.font='11px Arial';
+  ctx.fillText('TOTAL BAKI',52+boxW*2+24+boxW/2,boxY+18);
+  ctx.fillStyle=totalDue>0?'#f87171':'#4ade80'; ctx.font='bold 24px Arial';
+  ctx.fillText('₹'+totalDue.toLocaleString('en-IN'),52+boxW*2+24+boxW/2,boxY+44);
 
-  ctx.fillStyle = '#fca5a5';
-  ctx.font = '13px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText('BAKI RAKAM (DUE AMOUNT)', 80, 208);
+  // ── Section title ──
+  let yy = 232;
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(52,yy-8); ctx.lineTo(W-52,yy-8); ctx.stroke();
+  ctx.fillStyle='#475569'; ctx.font='bold 11px Arial'; ctx.textAlign='left';
+  ctx.fillText('SERVICE HISTORY', 52, yy+4);
 
-  ctx.fillStyle = '#f87171';
-  ctx.font = 'bold 40px Arial';
-  ctx.fillText('₹' + due.toLocaleString('en-IN'), 80, 255);
+  // ── Entry rows ──
+  yy += 18;
+  entries.forEach((u,i)=>{
+    const due  = getTotalDue(u);
+    const paid = getTotalPaidAll(u);
+    const isOvr= u.dueDate&&u.dueDate<todayStr&&due>0;
+    const rowBg= i%2===0?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.01)';
+    const accentCol = due===0?'#22c55e':isOvr?'#ef4444':'#f59e0b';
 
-  // ── Stats right side ──
-  ctx.fillStyle = 'rgba(255,255,255,0.05)';
-  roundRect(ctx, 420, 180, 240, 90, 12);
-  ctx.fill();
+    ctx.fillStyle = rowBg;
+    roundRect(ctx,52,yy,W-104,entryH-6,8); ctx.fill();
+    // left accent line
+    ctx.fillStyle = accentCol;
+    ctx.fillRect(52,yy,3,entryH-6);
 
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial';
-  ctx.fillText('Kul Rakam', 440, 205);
-  ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 16px Arial';
-  ctx.fillText('₹' + total.toLocaleString('en-IN'), 440, 225);
+    // Service name
+    ctx.fillStyle='#f1f5f9'; ctx.font='bold 13px Arial'; ctx.textAlign='left';
+    const svcLabel = (u.service||'General Service').substring(0,32);
+    ctx.fillText(svcLabel, 64, yy+20);
+    // Date
+    ctx.fillStyle='#64748b'; ctx.font='12px Arial';
+    ctx.fillText(formatDateDisplay((u.createdAt||'').split('T')[0]), 64, yy+38);
+    if(u.dueDate){
+      ctx.fillStyle=isOvr?'#f87171':'#94a3b8';
+      ctx.fillText('Due: '+formatDateDisplay(u.dueDate), 64, yy+54);
+    }
 
-  ctx.fillStyle = '#94a3b8'; ctx.font = '12px Arial';
-  ctx.fillText('Jama Rakam', 440, 248);
-  ctx.fillStyle = '#4ade80'; ctx.font = 'bold 16px Arial';
-  ctx.fillText('₹' + paid.toLocaleString('en-IN'), 440, 268);
+    // Status badge
+    const badgeX = W-210;
+    ctx.fillStyle=due===0?'rgba(74,222,128,0.15)':isOvr?'rgba(239,68,68,0.15)':'rgba(245,158,11,0.15)';
+    roundRect(ctx,badgeX,yy+8,120,22,6); ctx.fill();
+    ctx.fillStyle=accentCol; ctx.font='bold 11px Arial'; ctx.textAlign='center';
+    ctx.fillText(due===0?'✓ Cleared':isOvr?'⚠ Overdue':'● Due', badgeX+60, yy+23);
 
-  // ── Due date ──
-  ctx.fillStyle = 'rgba(245,158,11,0.15)';
-  roundRect(ctx, 60, 290, 280, 44, 10);
-  ctx.fill();
-  ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 13px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText('📅  Due Tarikh: ' + dueDate, 80, 317);
+    // Amounts
+    ctx.textAlign='right';
+    ctx.fillStyle='#94a3b8'; ctx.font='11px Arial';
+    ctx.fillText('Baki', W-52, yy+20);
+    ctx.fillStyle=due>0?'#f87171':'#4ade80'; ctx.font='bold 16px Arial';
+    ctx.fillText('₹'+due.toLocaleString('en-IN'), W-52, yy+40);
+    ctx.fillStyle='#475569'; ctx.font='11px Arial';
+    ctx.fillText('Paid ₹'+paid.toLocaleString('en-IN'), W-52, yy+57);
+
+    yy += entryH;
+  });
+
+  // ── Divider before footer ──
+  yy += 6;
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(52,yy); ctx.lineTo(W-52,yy); ctx.stroke();
+  yy += 20;
 
   // ── Message ──
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '14px Arial';
-  ctx.fillText('Kripaya jald se jald baki rakam ka bhugtan karein.', 60, 360);
+  ctx.fillStyle='#cbd5e1'; ctx.font='13px Arial'; ctx.textAlign='left';
+  ctx.fillText('Kripaya jald se jald baki rakam ka bhugtan karein. Shukriya!', 52, yy);
+  yy += 22;
 
   // ── Contact ──
-  ctx.fillStyle = '#60a5fa';
-  ctx.font = 'bold 14px Arial';
-  ctx.fillText('📞  ' + s.ownerMobile + '   |   ' + s.shopAddress.split(',')[0], 60, 390);
+  ctx.fillStyle='#60a5fa'; ctx.font='bold 13px Arial';
+  ctx.fillText('📞  '+(s.ownerMobile||'')+'   |   '+(s.shopAddress||'').split(',')[0], 52, yy);
 
-  // ── Bottom date ──
-  ctx.fillStyle = '#475569';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'right';
-  ctx.fillText('Generated: ' + today, 660, 415);
+  // ── Footer date ──
+  ctx.fillStyle='#334155'; ctx.font='11px Arial'; ctx.textAlign='right';
+  ctx.fillText('Generated: '+today, W-52, yy);
 
   // ── Download ──
   const link = document.createElement('a');
-  link.download = 'due-reminder-' + u.name.replace(/\s+/g,'-') + '.png';
+  link.download = 'udhari-'+custName.replace(/\s+/g,'-')+'.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 
-  showToast('✅ Image download ho gayi! WhatsApp mein manually attach karein.', 'success');
+  showToast('✅ Combined image download ho gayi! WhatsApp mein bhejein.','success');
 }
 
 // Helper: rounded rectangle
@@ -6948,10 +7490,723 @@ window.addEventListener('storage', (e)=>{
   }
 });
 
-// ===================== START =====================
-initFirebase();
+// ===================== SERVICE TRACKER (KANBAN) =====================
+function renderServiceTracker(){
+  const board = document.getElementById('tracker-board');
+  if(!board) return;
+  const search = (document.getElementById('tracker-search')?.value||'').toLowerCase();
+  const filterMode = document.getElementById('tracker-filter')?.value||'active';
+  const statuses = ['pending','processing','approved','completed','rejected'];
+  const statusLabels = {pending:'⏳ Pending',processing:'🔄 Processing',approved:'✅ Approved',completed:'🎉 Completed',rejected:'❌ Rejected'};
+  const statusColors = {pending:'var(--pending)',processing:'var(--warning)',approved:'var(--success)',completed:'var(--primary)',rejected:'var(--danger)'};
 
-// Check if already logged in (session exists)
+  let txns = DB.transactions.filter(t=>t.type==='service'||!t.type);
+  if(filterMode==='active') txns = txns.filter(t=>t.status==='pending'||t.status==='processing');
+  if(search) txns = txns.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.service||'').toLowerCase().includes(search));
+  txns = [...txns].sort((a,b)=>b.date.localeCompare(a.date));
+
+  const grouped = {};
+  statuses.forEach(s=>{ grouped[s]=txns.filter(t=>t.status===s); });
+  const showStatuses = filterMode==='active' ? ['pending','processing'] : statuses;
+
+  board.innerHTML = showStatuses.map(st=>`
+    <div style="background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden">
+      <div style="padding:12px 16px;background:${statusColors[st]};color:#fff;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;font-size:14px">${statusLabels[st]}</span>
+        <span style="background:rgba(255,255,255,0.3);border-radius:20px;padding:2px 8px;font-size:12px;font-weight:700">${grouped[st].length}</span>
+      </div>
+      <div style="padding:8px;max-height:500px;overflow-y:auto">
+        ${grouped[st].length===0?`<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted)">Koi nahi</div>`:''}
+        ${grouped[st].map(t=>`
+          <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer" onclick="viewTxn('${t.id}')">
+            <div style="font-weight:600;font-size:13px;margin-bottom:3px">${esc(t.name)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">${esc(t.service)} · ${formatDateDisplay(t.date)}</div>
+            ${t.ref?`<div style="font-size:11px;font-family:monospace;background:var(--card);padding:2px 6px;border-radius:4px;display:inline-block;margin-bottom:6px">${t.ref}</div>`:''}
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              ${['pending','processing','approved','completed','rejected'].filter(s=>s!==t.status).map(s=>`
+                <button onclick="event.stopPropagation();quickStatusUpdate('${t.id}','${s}')" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-family:inherit;color:var(--text-muted)">→ ${s.charAt(0).toUpperCase()+s.slice(1)}</button>
+              `).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function quickStatusUpdate(id, newStatus){
+  const t = DB.transactions.find(x=>x.id===id);
+  if(!t) return;
+  t.status = newStatus;
+  t.updatedAt = new Date().toISOString();
+  saveDB();
+  renderServiceTracker();
+  updatePendingBadge();
+  showToast(`Status updated → ${newStatus}`, 'success');
+  logActivity('Status Updated', t.name+' → '+newStatus);
+}
+
+// ===================== TOKEN / QUEUE =====================
+let tokenQueue = [];
+let currentTokenNum = 0;
+
+function issueToken(){
+  const name = document.getElementById('token-name')?.value.trim();
+  const service = document.getElementById('token-service')?.value.trim();
+  if(!name){ showToast('Customer naam likhein!','error'); return; }
+  currentTokenNum++;
+  const token = {
+    no: currentTokenNum,
+    name, service,
+    time: new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),
+    called: false
+  };
+  tokenQueue.push(token);
+  document.getElementById('current-token-display').textContent = String(currentTokenNum).padStart(2,'0');
+  document.getElementById('token-name').value='';
+  document.getElementById('token-service').value='';
+  renderTokenQueue();
+  showToast(`Token #${currentTokenNum} issued — ${name}`,'success');
+}
+
+function callNextToken(){
+  const pending = tokenQueue.filter(t=>!t.called);
+  if(pending.length===0){ showToast('Queue empty hai!',''); return; }
+  const next = pending[0];
+  next.called = true;
+  document.getElementById('current-token-display').textContent = String(next.no).padStart(2,'0');
+  renderTokenQueue();
+  showToast(`Token #${next.no} — ${next.name} — Please come!`,'success');
+}
+
+function clearTokenQueue(){
+  if(!confirm('Queue clear karein?')) return;
+  tokenQueue=[];
+  currentTokenNum=0;
+  document.getElementById('current-token-display').textContent='--';
+  renderTokenQueue();
+}
+
+function renderTokenQueue(){
+  const el = document.getElementById('token-queue-list');
+  if(!el) return;
+  if(tokenQueue.length===0){
+    el.innerHTML='<div style="text-align:center;padding:24px;font-size:13px;color:var(--text-muted)">Queue khali hai</div>';
+    return;
+  }
+  el.innerHTML = tokenQueue.map(t=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);${t.called?'opacity:0.5':''}">
+      <div style="width:36px;height:36px;border-radius:50%;background:${t.called?'var(--bg)':'linear-gradient(135deg,var(--primary),#60a5fa)'};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:${t.called?'var(--text-muted)':'#fff'};flex-shrink:0">${String(t.no).padStart(2,'0')}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${esc(t.name)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${t.service||'—'} · ${t.time}</div>
+      </div>
+      <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${t.called?'var(--success-light)':'var(--pending-light)'};color:${t.called?'var(--success)':'var(--pending)'}">${t.called?'Called':'Waiting'}</span>
+    </div>`).join('');
+}
+
+// ===================== CUSTOMER PORTAL =====================
+function openCustomerPortal(){
+  const url = window.location.href.split('?')[0];
+  const el = document.getElementById('portal-url-display');
+  if(el) el.value = url + '?portal=1';
+  generatePortalQR(url + '?portal=1');
+  document.getElementById('portal-info-modal').classList.add('open');
+  setTimeout(()=>safeCreateIcons(),50);
+}
+
+function copyPortalURL(){
+  const el = document.getElementById('portal-url-display');
+  if(!el) return;
+  navigator.clipboard.writeText(el.value).then(()=>showToast('URL copied!','success')).catch(()=>{
+    el.select(); document.execCommand('copy'); showToast('URL copied!','success');
+  });
+}
+
+function generatePortalQR(url){
+  const canvas = document.getElementById('portal-qr-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 180;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,size,size);
+  // Simple QR placeholder with URL text
+  ctx.fillStyle = '#1a56db';
+  ctx.font = 'bold 10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('SCAN TO CHECK', size/2, 20);
+  ctx.fillText('SERVICE STATUS', size/2, 34);
+  // Draw placeholder squares
+  const drawSquare=(x,y,s)=>{ctx.fillStyle='#0f172a';ctx.fillRect(x,y,s,s);};
+  const squareSize=6;
+  for(let r=0;r<17;r++){
+    for(let c=0;c<17;c++){
+      if((r<3&&c<3)||(r<3&&c>13)||(r>13&&c<3)) drawSquare(48+c*squareSize,48+r*squareSize,squareSize-1);
+      else if(Math.random()>0.5) drawSquare(48+c*squareSize,48+r*squareSize,squareSize-1);
+    }
+  }
+  ctx.fillStyle='#1a56db';
+  ctx.font='9px Arial';
+  ctx.fillText('Fiza Digital', size/2, size-8);
+}
+
+function openPortalPage(){
+  const portalPage = document.getElementById('customer-portal-page');
+  if(!portalPage) return;
+  const shopNameEl = document.getElementById('portal-shop-name');
+  if(shopNameEl) shopNameEl.textContent = DB.settings.shopName || 'Fiza Digital Sewa Kendra';
+  portalPage.style.display='block';
+  document.getElementById('portal-results').style.display='none';
+  document.getElementById('portal-error').style.display='none';
+  document.getElementById('portal-mobile').value='';
+  document.getElementById('portal-name').value='';
+  closeModal('portal-info-modal');
+}
+
+function closePortalPage(){
+  const portalPage = document.getElementById('customer-portal-page');
+  if(portalPage) portalPage.style.display='none';
+}
+
+function searchPortal(){
+  const mobile = document.getElementById('portal-mobile')?.value.trim();
+  const name = document.getElementById('portal-name')?.value.trim().toLowerCase();
+  const errEl = document.getElementById('portal-error');
+  const resultsEl = document.getElementById('portal-results');
+
+  if(!mobile && !name){ errEl.textContent='Mobile number ya naam zaroor bharen!'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+
+  // Search transactions
+  let txns = DB.transactions.filter(t=>{
+    const mobileMatch = mobile ? (t.mobile||'').replace(/\D/g,'').slice(-10) === mobile.replace(/\D/g,'').slice(-10) : false;
+    const nameMatch = name ? (t.name||'').toLowerCase().includes(name) : false;
+    return mobile&&name ? (mobileMatch||nameMatch) : (mobileMatch||nameMatch);
+  }).sort((a,b)=>b.date.localeCompare(a.date));
+
+  if(txns.length===0){
+    resultsEl.style.display='block';
+    resultsEl.innerHTML=`<div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;text-align:center;color:#94a3b8;border:1px solid rgba(255,255,255,0.1)">
+      <div style="font-size:32px;margin-bottom:8px">🔍</div>
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px">Koi record nahi mila</div>
+      <div style="font-size:12px">Mobile number ya naam check karein</div>
+    </div>`;
+    return;
+  }
+
+  const statusInfo = {
+    pending:   {icon:'⏳',label:'Pending',color:'#f59e0b',bg:'rgba(245,158,11,0.2)'},
+    processing:{icon:'🔄',label:'Processing',color:'#3b82f6',bg:'rgba(59,130,246,0.2)'},
+    approved:  {icon:'✅',label:'Approved',color:'#10b981',bg:'rgba(16,185,129,0.2)'},
+    completed: {icon:'🎉',label:'Completed',color:'#6366f1',bg:'rgba(99,102,241,0.2)'},
+    rejected:  {icon:'❌',label:'Rejected',color:'#ef4444',bg:'rgba(239,68,68,0.2)'}
+  };
+
+  const detail = DB.settings.portalDetailLevel || 'full';
+
+  resultsEl.style.display='block';
+  resultsEl.innerHTML=`
+    <div style="color:#10b981;font-size:13px;text-align:center;margin-bottom:12px;font-weight:600">✓ ${txns.length} record${txns.length>1?'s':''} mila</div>
+    ${txns.slice(0,10).map(t=>{
+      const si = statusInfo[t.status]||statusInfo.pending;
+      return `<div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="color:#fff;font-weight:700;font-size:15px">${esc(t.service)}</div>
+            ${detail==='full'?`<div style="color:#94a3b8;font-size:12px;margin-top:2px">${formatDateDisplay(t.date)}</div>`:''}
+          </div>
+          <div style="background:${si.bg};border:1px solid ${si.color}40;border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:14px">${si.icon}</span>
+            <span style="color:${si.color};font-weight:700;font-size:13px">${si.label}</span>
+          </div>
+        </div>
+        ${detail==='full'&&t.ref?`<div style="background:rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;font-size:11px;font-family:monospace;color:#93c5fd">Ref: ${t.ref}</div>`:''}
+        ${t.notes?`<div style="color:#94a3b8;font-size:12px;margin-top:8px">${esc(t.notes)}</div>`:''}
+      </div>`;
+    }).join('')}
+    <div style="text-align:center;color:#475569;font-size:11px;padding:8px">${DB.settings.portalMsg||'Hamari seva chunne ke liye shukriya!'}</div>`;
+}
+
+// Check portal URL on load
+function checkPortalURL(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('portal')==='1'){
+    setTimeout(openPortalPage, 500);
+  }
+}
+
+function savePortalSettings(){
+  const msg = document.getElementById('s-portal-msg')?.value.trim();
+  const detail = document.getElementById('s-portal-detail')?.value;
+  DB.settings.portalMsg = msg || 'Hamari seva chunne ke liye shukriya!';
+  DB.settings.portalDetailLevel = detail || 'full';
+  saveDB();
+  showToast('Portal settings saved!','success');
+}
+
+// ===================== MONTHLY PROFIT CHART (ENHANCED) =====================
+function renderMonthlyProfitChart(){
+  const el = document.getElementById('monthly-profit-chart');
+  if(!el) return;
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(new Date().getFullYear(),new Date().getMonth()-i,1);
+    const key=d.toISOString().substring(0,7);
+    const mNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const label=mNames[d.getMonth()];
+    const txns=DB.transactions.filter(t=>t.date.startsWith(key));
+    const rev=calcRevenue(txns);
+    months.push({key,label,net:rev.netProfit,gross:rev.gross,count:txns.length});
+  }
+  const maxVal=Math.max(...months.map(m=>m.gross),1);
+  el.innerHTML=`
+    <div style="display:flex;align-items:flex-end;justify-content:space-around;height:120px;padding:0 8px;gap:4px">
+      ${months.map(m=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:600">₹${m.net>999?Math.round(m.net/1000)+'k':m.net}</div>
+          <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:1px">
+            <div title="Gross: ₹${m.gross}" style="width:80%;height:${Math.max((m.gross/maxVal)*90,2)}px;background:linear-gradient(180deg,var(--primary),#60a5fa);border-radius:3px 3px 0 0;position:relative">
+              <div style="position:absolute;bottom:0;left:0;right:0;height:${Math.max((m.net/maxVal)*90,1)}px;background:linear-gradient(180deg,var(--secondary),#34d399);border-radius:3px 3px 0 0"></div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted)">${m.label}</div>
+          <div style="font-size:9px;color:var(--text-muted)">${m.count}tx</div>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:10px">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--primary);border-radius:2px;display:inline-block"></span>Gross</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--secondary);border-radius:2px;display:inline-block"></span>Net Profit</span>
+    </div>`;
+}
+
+// ===================== BIRTHDAY REMINDERS =====================
+function checkBirthdayReminders(){
+  const today = new Date();
+  const todayMD = String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+
+  // Get unique customers from transactions with DOB
+  const custMap={};
+  DB.transactions.forEach(t=>{
+    if(t.dob && !custMap[t.name]){
+      custMap[t.name]={name:t.name,mobile:t.mobile||'',dob:t.dob};
+    }
+  });
+
+  const birthdays = Object.values(custMap).filter(c=>{
+    if(!c.dob) return false;
+    const parts=c.dob.split('-');
+    if(parts.length<3) return false;
+    return parts[1]+'-'+parts[2]===todayMD;
+  });
+
+  const el = document.getElementById('birthday-reminders-list');
+  if(!el) return;
+
+  if(birthdays.length===0){
+    el.innerHTML='<div style="font-size:13px;color:var(--text-muted)">Aaj kisi ka birthday nahi hai 🙂</div>';
+    return;
+  }
+
+  el.innerHTML=`<div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent)">🎂 Aaj ${birthdays.length} customer ka birthday hai!</div>`+
+    birthdays.map(c=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--accent-light);border-radius:var(--radius-sm);margin-bottom:8px">
+        <div style="width:36px;height:36px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">${c.name.charAt(0)}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${esc(c.name)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.mobile||'No mobile'}</div>
+        </div>
+        ${c.mobile?`<a href="https://wa.me/91${c.mobile.slice(-10)}?text=${encodeURIComponent('🎂 Happy Birthday '+c.name+'! '+DB.settings.shopName+' ki taraf se aapko aur aapke pariwar ko janamdin ki dher saari shubhkamnayein! 🌹')}" target="_blank" class="btn btn-sm btn-whatsapp" style="text-decoration:none">WA Wish</a>`:''}
+      </div>`).join('');
+  showToast(`🎂 ${birthdays.length} birthday today!`,'success');
+}
+
+// Auto check birthdays on app load
+function autoBirthdayCheck(){
+  checkBirthdayReminders();
+  const todayBirthdays = (() => {
+    const today = new Date();
+    const todayMD = String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    const custMap={};
+    DB.transactions.forEach(t=>{ if(t.dob && !custMap[t.name]) custMap[t.name]={dob:t.dob,name:t.name}; });
+    return Object.values(custMap).filter(c=>c.dob&&c.dob.split('-').slice(1).join('-')===todayMD);
+  })();
+  if(todayBirthdays.length>0) showToast(`🎂 ${todayBirthdays.length} customer${todayBirthdays.length>1?'s':''} ka aaj birthday hai!`,'');
+}
+
+// ===================== DAILY SUMMARY WHATSAPP =====================
+function sendDailySummaryWA(){
+  const today=getTodayStr();
+  const txns=DB.transactions.filter(t=>t.date===today);
+  const rev=calcRevenue(txns);
+  const pending=DB.transactions.filter(t=>t.status==='pending').length;
+  const due=DB.udhari.filter(u=>getTotalDue(u)>0).reduce((s,u)=>s+getTotalDue(u),0);
+  const s=DB.settings;
+
+  const msg=`📊 *${s.shopName}*
+📅 Aaj ka Summary — ${formatDateDisplay(today)}
+━━━━━━━━━━━━━━━━━
+✅ Transactions: *${txns.length}*
+💰 Gross Revenue: *₹${rev.gross.toLocaleString('en-IN')}*
+📈 Net Profit: *₹${rev.netProfit.toLocaleString('en-IN')}*
+⏳ Pending: *${pending}*
+💳 Total Due: *₹${due.toLocaleString('en-IN')}*
+━━━━━━━━━━━━━━━━━
+${s.shopName}`;
+
+  const phone='91'+(s.waNumber||s.ownerMobile).replace(/\D/g,'').slice(-10);
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+  window.open(url,'_blank');
+  showToast('Daily summary WhatsApp khul raha hai...','success');
+  logActivity('Daily Summary WA','Sent daily report');
+}
+
+// ===================== SHOWPAGE UPDATE FOR NEW PAGES =====================
+const _origShowPage = showPage;
+// Patch showPage to handle new pages
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('page-'+name);if(el)el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+name+"'"))n.classList.add('active');});
+  const extraTitles={
+    'service-tracker':['Service Tracker','Kanban — Status Pipeline'],
+    'token-queue':['Token / Queue','Customer Queue Management'],
+  };
+  if(extraTitles[name]){
+    document.getElementById('page-title').textContent=extraTitles[name][0];
+    document.getElementById('page-sub').textContent=extraTitles[name][1];
+  } else {
+    const langTitleMap={
+      en:{
+        dashboard:['Dashboard',"Today's Overview"],
+        transactions:['All Transactions','All Transaction Records'],
+        'add-transaction':['New Transaction','Add New Transaction'],
+        'money-transfer':['AePS / Cash Transfer','Record Transfer'],
+        search:['Customer Search','Find Customer'],
+        reports:['Reports','Monthly Summary & Analytics'],
+        tools:['CSC/Aaple Tools','Government Service Portals'],
+        udhari:['Udhari / Due Khata','Outstanding Dues'],
+        expenses:['Expenses','Shop Expenses'],
+        cashbook:['Cash Book','Daily Cash'],
+        customers:['Customers','Customer Database'],
+        'bulk-wa':['Bulk WhatsApp','Mass Message'],
+        activity:['Activity Log','Recent Actions'],
+        settings:['Settings / Profile','Shop & Account Settings'],
+      },
+      hi:{
+        dashboard:['डैशबोर्ड','आज का विवरण'],
+        transactions:['सभी लेनदेन','सभी लेनदेन रिकॉर्ड'],
+        'add-transaction':['नया लेनदेन','नया लेनदेन जोड़ें'],
+        'money-transfer':['AePS / कैश ट्रांसफर','ट्रांसफर दर्ज करें'],
+        search:['ग्राहक खोज','ग्राहक खोजें'],
+        reports:['रिपोर्ट','मासिक सारांश और विश्लेषण'],
+        tools:['सरकारी टूल्स','सरकारी सेवा पोर्टल'],
+        udhari:['उधारी / बकाया','बकाया प्रबंधन'],
+        expenses:['खर्चे','दुकान के खर्चे'],
+        cashbook:['कैश बुक','दैनिक कैश'],
+        customers:['ग्राहक','ग्राहक डेटाबेस'],
+        'bulk-wa':['बल्क व्हाट्सएप','सामूहिक संदेश'],
+        activity:['गतिविधि लॉग','हाल की गतिविधियां'],
+        settings:['सेटिंग्स','दुकान और खाता सेटिंग्स'],
+      }
+    };
+    const lang=typeof currentLang!=='undefined'?currentLang:'en';
+    const titles=(langTitleMap[lang]||langTitleMap.en)[name]||(langTitleMap.en[name]||[name,'']);
+    document.getElementById('page-title').textContent=titles[0];
+    document.getElementById('page-sub').textContent=titles[1];
+  }
+  currentPage=name;
+  if(name==='transactions')renderTransactions();
+  if(name==='dashboard')renderDashboard();
+  if(name==='reports')renderReports();
+  if(name==='udhari')renderUdhari();
+  if(name==='expenses')renderExpenses();
+  if(name==='cashbook')renderCashbook();
+  if(name==='customers')renderCustomers();
+  if(name==='bulk-wa')renderBulkWA();
+  if(name==='activity')renderActivityLog();
+  if(name==='service-tracker')renderServiceTracker();
+  if(name==='token-queue')renderTokenQueue();
+  if(name==='add-transaction')document.getElementById('f-date').value=getTodayStr();
+  setTimeout(()=>{ if(window.lucide) safeCreateIcons(); },50);
+  setTimeout(()=>{ if(typeof fixChartsResponsive==='function') fixChartsResponsive(); },100);
+  closeSidebar();
+}
+
+
+
+
+// ===================== DOCUMENT UPLOAD (Firebase Storage) =====================
+
+let docSelectedFiles = []; // Files selected but not yet uploaded
+
+function openDocUpload(txnId){
+  const txn = DB.transactions.find(t => t.id === txnId);
+  if(!txn) return;
+  document.getElementById('doc-txn-id').value = txnId;
+  document.getElementById('doc-customer-info').innerHTML =
+    `<strong>📋 ${esc(txn.name)}</strong> &nbsp;|&nbsp; ${esc(txn.service)} &nbsp;|&nbsp; ${formatDateDisplay(txn.date)}` +
+    (txn.mobile ? ` &nbsp;|&nbsp; 📱 ${esc(txn.mobile)}` : '');
+  docSelectedFiles = [];
+  document.getElementById('doc-files-preview').innerHTML = '';
+  document.getElementById('doc-upload-progress').style.display = 'none';
+  document.getElementById('doc-file-input').value = '';
+  document.getElementById('doc-label-select').value = 'Aadhaar Card';
+  document.getElementById('doc-label-custom').style.display = 'none';
+  document.getElementById('doc-label-custom').value = '';
+  renderExistingDocs(txnId);
+  closeModal('detail-modal');
+  document.getElementById('doc-upload-modal').classList.add('open');
+  setTimeout(() => safeCreateIcons(), 50);
+}
+
+function handleDocFileSelect(event){
+  const files = Array.from(event.target.files);
+  addDocFiles(files);
+}
+
+function handleDocDrop(event){
+  event.preventDefault();
+  const area = document.getElementById('doc-upload-area');
+  area.style.borderColor = 'var(--border)';
+  area.style.background = 'var(--bg)';
+  const files = Array.from(event.dataTransfer.files).filter(f =>
+    f.type.startsWith('image/') || f.type === 'application/pdf'
+  );
+  addDocFiles(files);
+}
+
+function addDocFiles(files){
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  files.forEach(f => {
+    if(f.size > maxSize){
+      showToast(`❌ ${f.name} — 5MB se bada hai, skip kiya`, 'danger');
+      return;
+    }
+    docSelectedFiles.push(f);
+  });
+  renderDocFilesPreview();
+}
+
+function renderDocFilesPreview(){
+  const container = document.getElementById('doc-files-preview');
+  if(docSelectedFiles.length === 0){ container.innerHTML = ''; return; }
+  container.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">${docSelectedFiles.length} file(s) selected</div>
+      ${docSelectedFiles.map((f,i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid var(--border)">
+          <span style="font-size:20px">${f.type === 'application/pdf' ? '📄' : '🖼️'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${(f.size/1024).toFixed(1)} KB</div>
+          </div>
+          <button onclick="removeDocFile(${i})" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:16px;padding:2px 6px">✕</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+function removeDocFile(idx){
+  docSelectedFiles.splice(idx, 1);
+  renderDocFilesPreview();
+}
+
+async function uploadDocuments(){
+  const txnId = document.getElementById('doc-txn-id').value;
+  if(!txnId) return;
+
+  if(docSelectedFiles.length === 0){
+    showToast('Pehle koi file select karein!', 'danger');
+    return;
+  }
+
+  const labelSel = document.getElementById('doc-label-select').value;
+  const labelCustom = document.getElementById('doc-label-custom').value.trim();
+  const label = labelSel === 'other' ? (labelCustom || 'Document') : labelSel;
+
+  if(!firebaseReady || !storage_fire){
+    // Fallback: save as base64 in localStorage (offline mode)
+    showToast('Firebase Storage nahi mila — local save ho raha hai...', '');
+    await uploadDocsLocalFallback(txnId, label);
+    return;
+  }
+
+  const btn = document.getElementById('doc-upload-btn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading...';
+  const progressDiv = document.getElementById('doc-upload-progress');
+  const progressBar = document.getElementById('doc-progress-bar');
+  const progressText = document.getElementById('doc-progress-text');
+  progressDiv.style.display = 'block';
+
+  const txn = DB.transactions.find(t => t.id === txnId);
+  if(!txn.documents) txn.documents = [];
+
+  let uploaded = 0;
+  for(let i = 0; i < docSelectedFiles.length; i++){
+    const file = docSelectedFiles[i];
+    const ext = file.name.split('.').pop();
+    const fileName = `docs/${txnId}/${Date.now()}_${i}.${ext}`;
+
+    try{
+      progressText.textContent = `Uploading ${i+1}/${docSelectedFiles.length}: ${file.name}`;
+      const storageRef = storage_fire.ref(fileName);
+      const uploadTask = storageRef.put(file);
+
+      await new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const pct = Math.round(((i + snapshot.bytesTransferred / snapshot.totalBytes) / docSelectedFiles.length) * 100);
+            progressBar.style.width = pct + '%';
+          },
+          reject,
+          resolve
+        );
+      });
+
+      const downloadURL = await storageRef.getDownloadURL();
+      txn.documents.push({
+        id: 'doc_' + Date.now() + '_' + i,
+        label: docSelectedFiles.length > 1 ? label + (i > 0 ? ` (${i+1})` : '') : label,
+        fileName: file.name,
+        fileType: file.type,
+        url: downloadURL,
+        storagePath: fileName,
+        uploadedAt: new Date().toISOString(),
+        size: file.size
+      });
+      uploaded++;
+    } catch(e){
+      console.error('Upload error:', e);
+      showToast(`❌ ${file.name} upload nahi hua: ${e.message}`, 'danger');
+    }
+  }
+
+  progressBar.style.width = '100%';
+  progressText.textContent = `${uploaded}/${docSelectedFiles.length} documents uploaded!`;
+
+  saveDB();
+  logActivity('Document Upload', `${uploaded} doc(s) uploaded for ${txn.name} — ${txn.service}`);
+
+  setTimeout(() => {
+    progressDiv.style.display = 'none';
+    btn.disabled = false;
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload Karo`;
+    docSelectedFiles = [];
+    document.getElementById('doc-files-preview').innerHTML = '';
+    document.getElementById('doc-file-input').value = '';
+    renderExistingDocs(txnId);
+    showToast(`✅ ${uploaded} document(s) upload ho gaya!`, 'success');
+    updateDocBadge(txnId);
+  }, 800);
+}
+
+async function uploadDocsLocalFallback(txnId, label){
+  // Base64 fallback for offline
+  const txn = DB.transactions.find(t => t.id === txnId);
+  if(!txn.documents) txn.documents = [];
+
+  for(let i = 0; i < docSelectedFiles.length; i++){
+    const file = docSelectedFiles[i];
+    const base64 = await new Promise((res) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsDataURL(file);
+    });
+    txn.documents.push({
+      id: 'doc_' + Date.now() + '_' + i,
+      label: docSelectedFiles.length > 1 ? label + (i > 0 ? ` (${i+1})` : '') : label,
+      fileName: file.name,
+      fileType: file.type,
+      url: base64,
+      storagePath: null,
+      uploadedAt: new Date().toISOString(),
+      size: file.size,
+      isLocal: true
+    });
+  }
+  saveDB();
+  docSelectedFiles = [];
+  document.getElementById('doc-files-preview').innerHTML = '';
+  renderExistingDocs(txnId);
+  showToast(`✅ ${txn.documents.length} document(s) local save ho gaya!`, 'success');
+  updateDocBadge(txnId);
+}
+
+function renderExistingDocs(txnId){
+  const txn = DB.transactions.find(t => t.id === txnId);
+  const container = document.getElementById('doc-existing-list');
+  if(!txn || !txn.documents || txn.documents.length === 0){
+    container.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:16px 0;border-top:1px solid var(--border);margin-top:8px">Abhi tak koi document upload nahi hua</div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">📁 Uploaded Documents (${txn.documents.length})</div>
+      ${txn.documents.map(doc => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;border:1px solid var(--border)">
+          <span style="font-size:22px;flex-shrink:0">${doc.fileType === 'application/pdf' ? '📄' : '🖼️'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${esc(doc.label)}</div>
+            <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(doc.fileName)}</div>
+            <div style="font-size:10px;color:var(--text-light)">${new Date(doc.uploadedAt).toLocaleDateString('en-IN')} · ${(doc.size/1024).toFixed(1)} KB ${doc.isLocal ? '· Local' : '· Cloud ☁️'}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-outline btn-sm" onclick="viewDocument('${esc(doc.id)}','${txnId}')" style="font-size:11px;padding:4px 8px">View</button>
+            <button class="btn btn-outline btn-sm" onclick="deleteDocument('${esc(doc.id)}','${txnId}')" style="font-size:11px;padding:4px 8px;color:var(--danger);border-color:var(--danger)">Del</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function viewDocument(docId, txnId){
+  const txn = DB.transactions.find(t => t.id === txnId);
+  if(!txn || !txn.documents) return;
+  const doc = txn.documents.find(d => d.id === docId);
+  if(!doc) return;
+  document.getElementById('doc-view-title').textContent = doc.label + ' — ' + txn.name;
+  const body = document.getElementById('doc-view-body');
+  if(doc.fileType === 'application/pdf'){
+    body.innerHTML = `<iframe src="${doc.url}" style="width:100%;height:60vh;border:none;border-radius:var(--radius-sm)"></iframe>`;
+  } else {
+    body.innerHTML = `<img src="${doc.url}" style="max-width:100%;max-height:70vh;border-radius:var(--radius-sm);box-shadow:var(--shadow-md)">`;
+  }
+  document.getElementById('doc-view-download').href = doc.url;
+  document.getElementById('doc-view-modal').classList.add('open');
+}
+
+async function deleteDocument(docId, txnId){
+  if(!confirm('Ye document delete karna chahte ho?')) return;
+  const txn = DB.transactions.find(t => t.id === txnId);
+  if(!txn || !txn.documents) return;
+  const doc = txn.documents.find(d => d.id === docId);
+  if(!doc) return;
+
+  // Delete from Firebase Storage if not local
+  if(doc.storagePath && storage_fire){
+    try{
+      await storage_fire.ref(doc.storagePath).delete();
+    } catch(e){
+      console.log('Storage delete error:', e);
+    }
+  }
+
+  txn.documents = txn.documents.filter(d => d.id !== docId);
+  saveDB();
+  renderExistingDocs(txnId);
+  updateDocBadge(txnId);
+  showToast('Document delete ho gaya!', 'success');
+}
+
+function updateDocBadge(txnId){
+  const txn = DB.transactions.find(t => t.id === txnId);
+  const count = (txn && txn.documents) ? txn.documents.length : 0;
+  const docCountEl = document.getElementById('modal-doc-count');
+  if(docCountEl){
+    docCountEl.textContent = count > 0 ? `Docs (${count})` : 'Docs';
+  }
+}
+
+// ===================== END DOCUMENT UPLOAD =====================
+
 if(isSessionValid()){
   // Auto-login — skip login screen
   document.getElementById('login-screen').style.display='none';
